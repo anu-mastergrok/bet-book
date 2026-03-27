@@ -1,0 +1,23 @@
+docs/superpowers/specs/2026-03-27-india-features-design.md
+  499ac1399e3e57a4 1-339
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.20",
+  "base_commit_sha": "d898b8f8bcf1c0bb3a337b9129f4bcf3b66ae35e",
+  "prompts": {
+    "499ac1399e3e57a4": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "15acdd98-6ebf-4422-8c63-49756b6d4258",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "S Kumar <skumar@ascend-marketing.com>",
+      "messages": [],
+      "total_additions": 1662,
+      "total_deletions": 1045,
+      "accepted_lines": 1658,
+      "overriden_lines": 0
+    }
+  }
+}
