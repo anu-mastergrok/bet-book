@@ -1,0 +1,29 @@
+app/api/bets/[id]/resolve/route.ts
+  23f9709f12aec394 33-36,42
+app/api/bets/[id]/dispute/route.ts
+  23f9709f12aec394 33-36
+app/api/client-payments/route.ts
+  23f9709f12aec394 76,78,82-84,86-96,98-99,118
+app/api/bets/[id]/confirm/route.ts
+  23f9709f12aec394 24-27
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.20",
+  "base_commit_sha": "354284379aac224ac572fd25ff88087507eeed24",
+  "prompts": {
+    "23f9709f12aec394": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "3b02e19c-0535-43b5-aa66-01f66669d9e1",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "S Kumar <skumar@ascend-marketing.com>",
+      "messages": [],
+      "total_additions": 32,
+      "total_deletions": 11,
+      "accepted_lines": 32,
+      "overriden_lines": 0
+    }
+  }
+}
