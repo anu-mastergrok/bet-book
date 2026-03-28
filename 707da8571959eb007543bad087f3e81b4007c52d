@@ -1,0 +1,23 @@
+app/verify-email/page.tsx
+  23f9709f12aec394 8,107-121,156-160
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.22",
+  "base_commit_sha": "707da8571959eb007543bad087f3e81b4007c52d",
+  "prompts": {
+    "23f9709f12aec394": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "3b02e19c-0535-43b5-aa66-01f66669d9e1",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "S Kumar <skumar@ascend-marketing.com>",
+      "messages": [],
+      "total_additions": 21,
+      "total_deletions": 14,
+      "accepted_lines": 21,
+      "overriden_lines": 0
+    }
+  }
+}
