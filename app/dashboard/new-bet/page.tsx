@@ -59,7 +59,7 @@ export default function NewBetPage() {
     try {
       const [seriesRes, matchesRes] = await Promise.all([
         fetch('/api/series', { headers: { Authorization: `Bearer ${accessToken}` } }),
-        fetch('/api/matches', { headers: { Authorization: `Bearer ${accessToken}` } }),
+        fetch('/api/matches?activated=true', { headers: { Authorization: `Bearer ${accessToken}` } }),
       ])
       if (!seriesRes.ok || !matchesRes.ok) throw new Error('Failed to fetch data')
       const seriesData = await seriesRes.json()
@@ -190,7 +190,7 @@ export default function NewBetPage() {
                   <option value="">Choose a match...</option>
                   {matches.map(match => (
                     <option key={match.id} value={match.id}>
-                      {match.teamA} vs {match.teamB} — {new Date(match.matchDate).toLocaleDateString('en-IN')}
+                      {match.status === 'live' ? '🔴 LIVE — ' : ''}{match.teamA} vs {match.teamB} · {new Date(match.matchDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
                     </option>
                   ))}
                 </select>

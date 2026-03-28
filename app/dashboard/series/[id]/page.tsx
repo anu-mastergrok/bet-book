@@ -22,6 +22,9 @@ interface MatchBreakdown {
   label: string
   matchType: string
   matchDate: string
+  status?: string
+  liveScore?: string
+  result?: string
   totalBets: number
   wins: number
   losses: number
@@ -180,6 +183,18 @@ export default function SeriesSummaryPage() {
                   <div>
                     <p className="font-medium text-white text-sm">{m.label} · {m.matchType}</p>
                     <p className="text-xs text-slate-400">{new Date(m.matchDate).toLocaleDateString('en-IN')} · {m.wins}W {m.losses}L</p>
+                    {m.status === 'live' && m.liveScore && (
+                      <div className="flex items-center gap-1.5 mt-1">
+                        <span className="relative flex h-2 w-2 shrink-0">
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                          <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                        </span>
+                        <span className="text-xs text-emerald-400 truncate">{m.liveScore}</span>
+                      </div>
+                    )}
+                    {m.status === 'completed' && m.result && (
+                      <p className="text-xs text-slate-500 mt-1 truncate">{m.result}</p>
+                    )}
                   </div>
                   <div className="text-right">
                     <p className={`font-semibold text-sm ${m.matchPnl >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
