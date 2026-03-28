@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
         phone,
         email: email && email.length > 0 ? email : null,
         password: hashedPassword,
-        role: 'USER',
+        role: 'FRIEND',
       },
     })
 

@@ -55,7 +55,13 @@ export default function RegisterPage() {
 
       register(data.user, data.tokens.accessToken, data.tokens.refreshToken)
       toast.success('Account created successfully!')
-      router.push('/dashboard')
+      if (data.user.role === 'ADMIN') {
+        router.push('/admin')
+      } else if (data.user.role === 'FRIEND') {
+        router.push('/friend/dashboard')
+      } else {
+        router.push('/dashboard')
+      }
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Registration failed')
     } finally {

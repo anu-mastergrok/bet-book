@@ -3,6 +3,7 @@ import prisma from '@/lib/db'
 import { settlementSchema } from '@/lib/validators'
 import { errorResponse, jsonResponse, authenticateRequest } from '@/lib/middleware'
 import { handleError, ValidationError, NotFoundError, AuthorizationError } from '@/lib/errors'
+import { createNotification } from '@/lib/notifications'
 
 export async function PUT(
   request: NextRequest,
@@ -77,6 +78,26 @@ export async function PUT(
         linkedMatch: true,
       },
     })
+
+    // Notify the friend of the settlement update (non-critical)
+    if (bet.clientUserId) {
+      const matchLabel = `${bet.match.teamA} vs ${bet.match.teamB}`
+      const statusLabel =
+        settlementStatus === 'settled' ? 'settled'
+        : settlementStatus === 'collected' ? 'collected'
+        : settlementStatus === 'lost_in_another_match' ? 'moved to another match'
+        : 'pending'
+      try {
+        await createNotification(
+          bet.clientUserId,
+          'Bet settlement updated',
+          `${matchLabel} bet marked as ${statusLabel}`,
+          `/friend/bets`
+        )
+      } catch {
+        // Non-critical — notification failure should not fail settlement update
+      }
+    }
 
     return jsonResponse({
       message: 'Bet settlement updated successfully',
