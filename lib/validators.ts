@@ -69,10 +69,35 @@ export const settlementSchema = z.object({
 // Client Payment Schema
 export const clientPaymentSchema = z.object({
   clientName: z.string().min(1, 'Client name is required'),
+  clientUserId: z.string().optional().nullable(),
   amount: z.number().positive('Amount must be positive'),
   method: z.enum(['upi', 'cash']).default('cash'),
   upiRef: z.string().optional().nullable(),
   note: z.string().optional().nullable(),
+})
+
+// Friend schemas
+export const linkFriendSchema = z.object({
+  friendId: z.string().min(1, 'Friend ID is required'),
+})
+
+// Bet assign schema
+export const assignFriendSchema = z.object({
+  clientUserId: z.string().min(1, 'Friend user ID is required'),
+})
+
+// Dispute schemas
+export const disputeSchema = z.object({
+  note: z.string().min(1, 'Dispute reason is required'),
+})
+
+export const resolveDisputeSchema = z.object({
+  note: z.string().min(1, 'Resolution note is required'),
+})
+
+// Notification mark-read schema
+export const markNotificationsReadSchema = z.object({
+  ids: z.array(z.string()).optional(),
 })
 
 export type RegisterInput = z.infer<typeof registerSchema>
@@ -83,3 +108,8 @@ export type BetEntryInput = z.infer<typeof betEntrySchema>
 export type UpdateBetEntryInput = z.infer<typeof updateBetEntrySchema>
 export type SettlementInput = z.infer<typeof settlementSchema>
 export type ClientPaymentInput = z.infer<typeof clientPaymentSchema>
+export type LinkFriendInput = z.infer<typeof linkFriendSchema>
+export type AssignFriendInput = z.infer<typeof assignFriendSchema>
+export type DisputeInput = z.infer<typeof disputeSchema>
+export type ResolveDisputeInput = z.infer<typeof resolveDisputeSchema>
+export type MarkNotificationsReadInput = z.infer<typeof markNotificationsReadSchema>
