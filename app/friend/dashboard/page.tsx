@@ -34,10 +34,21 @@ export default function FriendDashboard() {
 
   useEffect(() => {
     if (!accessToken) return
-    fetch('/api/bets', { headers: { Authorization: `Bearer ${accessToken}` } })
-      .then(r => r.json())
-      .then(data => setBets(data.bets ?? []))
-      .finally(() => setIsLoading(false))
+    let cancelled = false
+    const load = async () => {
+      try {
+        const r = await fetch('/api/bets', { headers: { Authorization: `Bearer ${accessToken}` } })
+        if (!r.ok) throw new Error('Failed to load bets')
+        const data = await r.json()
+        if (!cancelled) setBets(data.bets ?? [])
+      } catch {
+        // silently fail — layout guard ensures user is authenticated
+      } finally {
+        if (!cancelled) setIsLoading(false)
+      }
+    }
+    load()
+    return () => { cancelled = true }
   }, [accessToken])
 
   const totalOwed = bets
@@ -82,7 +93,7 @@ export default function FriendDashboard() {
         <div className="border-t border-slate-700 pt-3 flex justify-between items-center">
           <p className="text-slate-400 text-sm">Net Balance</p>
           <p className={`font-bold text-xl ${net > 0 ? 'text-red-400' : net < 0 ? 'text-emerald-400' : 'text-slate-300'}`}>
-            {net > 0 ? '-' : '+'}{formatINR(Math.abs(net))}
+            {net > 0 ? `You owe ${formatINR(net)}` : net < 0 ? `Owed ${formatINR(Math.abs(net))}` : 'Settled up'}
           </p>
         </div>
       </div>

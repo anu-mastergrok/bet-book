@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useAuth } from '@/context/AuthContext'
 import { useToast, ToastContainer } from '@/components/Toast'
 import { formatINR } from '@/lib/format'
@@ -36,15 +36,23 @@ export default function FriendBetsPage() {
   const [disputeNote, setDisputeNote] = useState('')
   const [actionLoading, setActionLoading] = useState<string | null>(null)
 
-  const loadBets = () => {
+  const loadBets = useCallback(async () => {
     if (!accessToken) return
-    fetch('/api/bets', { headers: { Authorization: `Bearer ${accessToken}` } })
-      .then(r => r.json())
-      .then(data => setBets(data.bets ?? []))
-      .finally(() => setIsLoading(false))
-  }
+    try {
+      const r = await fetch('/api/bets', { headers: { Authorization: `Bearer ${accessToken}` } })
+      if (!r.ok) return
+      const data = await r.json()
+      setBets(data.bets ?? [])
+    } catch {
+      // silently fail
+    } finally {
+      setIsLoading(false)
+    }
+  }, [accessToken])
 
-  useEffect(() => { loadBets() }, [accessToken])
+  useEffect(() => {
+    loadBets()
+  }, [loadBets])
 
   const handleConfirm = async (betId: string) => {
     setActionLoading(betId)
