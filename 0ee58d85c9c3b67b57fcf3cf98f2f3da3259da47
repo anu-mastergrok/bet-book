@@ -1,0 +1,33 @@
+components/GoogleProvider.tsx
+  23f9709f12aec394 1-11
+app/verify-email/page.tsx
+  23f9709f12aec394 1-174
+app/layout.tsx
+  23f9709f12aec394 4,19-23
+app/login/page.tsx
+  23f9709f12aec394 6,9,17,24-29,40,43,51-65,86-103,107,109,111-115,118,136,150,152
+app/register/page.tsx
+  23f9709f12aec394 6,13,19,27-50,71,73-77,80,83,108-125,132-133,141-143,149,153-155,163-166,168,178-181,183,189,191
+.env.example
+  23f9709f12aec394 18-28
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.22",
+  "base_commit_sha": "0ee58d85c9c3b67b57fcf3cf98f2f3da3259da47",
+  "prompts": {
+    "23f9709f12aec394": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "3b02e19c-0535-43b5-aa66-01f66669d9e1",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "S Kumar <skumar@ascend-marketing.com>",
+      "messages": [],
+      "total_additions": 335,
+      "total_deletions": 129,
+      "accepted_lines": 335,
+      "overriden_lines": 0
+    }
+  }
+}
