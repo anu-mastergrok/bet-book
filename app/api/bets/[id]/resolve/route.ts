@@ -30,11 +30,16 @@ export async function PATCH(
       throw new AuthorizationError('You can only resolve disputes on your own bets')
     }
 
+    if (bet.disputeStatus === 'resolved') {
+      return jsonResponse({ message: 'Dispute already resolved', bet })
+    }
+
     const updated = await prisma.betEntry.update({
       where: { id: params.id },
       data: {
         disputeStatus: 'resolved',
         disputeResolvedAt: new Date(),
+        disputeNote: parsed.data.note,
       },
     })
 

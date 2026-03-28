@@ -73,20 +73,30 @@ export async function POST(request: NextRequest) {
       include: { match: true },
     })
 
+    // Determine which bets to settle within the payment amount
     let remaining = amount
-    const settledBetIds: string[] = []
+    const betsToSettle: typeof pendingBets = []
 
     for (const bet of pendingBets) {
       if (remaining <= 0) break
+      betsToSettle.push(bet)
+      remaining -= Math.abs(Number(bet.profitLoss))
+    }
 
-      await prisma.betEntry.update({
-        where: { id: bet.id },
-        data: { settlementStatus: 'settled', paymentMethod: method },
-      })
+    // Settle all at once in a single transaction
+    if (betsToSettle.length > 0) {
+      await prisma.$transaction(
+        betsToSettle.map(bet =>
+          prisma.betEntry.update({
+            where: { id: bet.id },
+            data: { settlementStatus: 'settled', paymentMethod: method },
+          })
+        )
+      )
+    }
 
-      settledBetIds.push(bet.id)
-
-      // Notify the friend for each settled bet (non-critical)
+    // Notify friends after transaction completes (non-critical)
+    for (const bet of betsToSettle) {
       if (bet.clientUserId) {
         const matchLabel = `${bet.match.teamA} vs ${bet.match.teamB}`
         try {
@@ -100,14 +110,12 @@ export async function POST(request: NextRequest) {
           // Non-critical
         }
       }
-
-      remaining -= Math.abs(Number(bet.profitLoss))
     }
 
     return jsonResponse({
       message: 'Payment recorded successfully',
       payment,
-      settledBets: settledBetIds.length,
+      settledBets: betsToSettle.length,
     }, 201)
   } catch (error) {
     const { statusCode, message } = handleError(error)

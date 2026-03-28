@@ -21,6 +21,10 @@ export async function PATCH(
       throw new AuthorizationError('This is not your bet')
     }
 
+    if (bet.confirmedByFriend) {
+      return jsonResponse({ message: 'Settlement already confirmed', bet })
+    }
+
     const updated = await prisma.betEntry.update({
       where: { id: params.id },
       data: { confirmedByFriend: true },

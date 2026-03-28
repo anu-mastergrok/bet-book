@@ -30,6 +30,10 @@ export async function PATCH(
       throw new AuthorizationError('This is not your bet')
     }
 
+    if (bet.disputeStatus === 'open') {
+      return jsonResponse({ message: 'Dispute already open', bet })
+    }
+
     const updated = await prisma.betEntry.update({
       where: { id: params.id },
       data: { disputeStatus: 'open', disputeNote: parsed.data.note },
