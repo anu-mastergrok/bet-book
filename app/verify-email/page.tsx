@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { useAuth } from '@/context/AuthContext'
 import { useToast, ToastContainer } from '@/components/Toast'
-import { TrendingUp, Mail } from 'lucide-react'
+import { TrendingUp, Mail, KeyRound } from 'lucide-react'
 
 function VerifyEmailForm() {
   const router = useRouter()
@@ -104,18 +104,21 @@ function VerifyEmailForm() {
                 <label className="label" htmlFor="otp">
                   <span className="label-text">Verification Code</span>
                 </label>
-                <input
-                  id="otp"
-                  type="text"
-                  inputMode="numeric"
-                  maxLength={6}
-                  placeholder="123456"
-                  value={otp}
-                  onChange={e => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                  className="input input-bordered w-full text-center text-2xl tracking-[0.5em] font-mono"
-                  autoComplete="one-time-code"
-                  required
-                />
+                <label className="input input-bordered flex items-center gap-2">
+                  <KeyRound size={16} className="text-base-content/40 shrink-0" />
+                  <input
+                    id="otp"
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={6}
+                    placeholder="123456"
+                    value={otp}
+                    onChange={e => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                    className="grow text-center text-2xl tracking-[0.5em] font-mono"
+                    autoComplete="one-time-code"
+                    required
+                  />
+                </label>
               </div>
 
               <button
@@ -150,5 +153,9 @@ function VerifyEmailForm() {
 }
 
 export default function VerifyEmailPage() {
-  return <Suspense><VerifyEmailForm /></Suspense>
+  return (
+    <Suspense fallback={<div className="min-h-dvh bg-base-100 flex items-center justify-center"><span className="loading loading-spinner loading-lg text-primary" /></div>}>
+      <VerifyEmailForm />
+    </Suspense>
+  )
 }
