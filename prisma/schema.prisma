@@ -80,37 +80,45 @@ enum BetResult {
 }
 
 model Series {
-  id        String   @id @default(cuid())
-  name      String
-  startDate DateTime
-  endDate   DateTime
-  status    String   @default("active") // active, completed
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id          String   @id @default(cuid())
+  name        String
+  startDate   DateTime
+  endDate     DateTime
+  status      String   @default("active") // active, completed
+  cricbuzzId  String?  @unique
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   matches Match[]
 
   @@index([status])
+  @@index([cricbuzzId])
 }
 
 model Match {
-  id        String   @id @default(cuid())
-  seriesId  String
-  teamA     String
-  teamB     String
-  matchDate DateTime
-  venue     String
-  matchType String   @default("T20")
-  status    String   @default("upcoming") // upcoming, live, completed
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id          String   @id @default(cuid())
+  seriesId    String
+  teamA       String
+  teamB       String
+  matchDate   DateTime
+  venue       String
+  matchType   String   @default("T20")
+  status      String   @default("upcoming") // upcoming, live, completed
+  cricbuzzId  String?  @unique
+  isActivated Boolean  @default(false)
+  liveScore   String?
+  result      String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
-  series    Series   @relation(fields: [seriesId], references: [id], onDelete: Cascade)
+  series     Series     @relation(fields: [seriesId], references: [id], onDelete: Cascade)
   betEntries BetEntry[] @relation("MatchBets")
   linkedBets BetEntry[] @relation("LinkedMatches")
 
   @@index([seriesId])
   @@index([status])
+  @@index([cricbuzzId])
+  @@index([isActivated])
 }
 
 model BetEntry {
