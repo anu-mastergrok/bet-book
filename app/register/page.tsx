@@ -3,23 +3,20 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { GoogleLogin } from '@react-oauth/google'
 import { useAuth } from '@/context/AuthContext'
 import { useToast, ToastContainer } from '@/components/Toast'
 import { User, Mail, Lock, Phone, Eye, EyeOff, TrendingUp } from 'lucide-react'
 
 export default function RegisterPage() {
   const router = useRouter()
-  const { register } = useAuth()
+  const { login, register } = useAuth()
   const toast = useToast()
   const [isLoading, setIsLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
   const [formData, setFormData] = useState({
-    name: '',
-    phone: '',
-    email: '',
-    password: '',
-    confirmPassword: '',
+    name: '', phone: '', email: '', password: '', confirmPassword: '',
   })
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -27,10 +24,33 @@ export default function RegisterPage() {
     setFormData(prev => ({ ...prev, [name]: value }))
   }
 
+  const redirectByRole = (role: string) => {
+    if (role === 'ADMIN') router.push('/admin')
+    else if (role === 'FRIEND') router.push('/friend/dashboard')
+    else router.push('/dashboard')
+  }
+
+  const handleGoogleSuccess = async (credentialResponse: { credential?: string }) => {
+    if (!credentialResponse.credential) return
+    try {
+      const response = await fetch('/api/auth/google', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ idToken: credentialResponse.credential }),
+      })
+      const data = await response.json()
+      if (!response.ok) throw new Error(data.error || 'Google sign-up failed')
+      login(data.user, data.tokens.accessToken, data.tokens.refreshToken)
+      toast.success('Account created!')
+      redirectByRole(data.user.role)
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Google sign-up failed')
+    }
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
-
     try {
       if (formData.password !== formData.confirmPassword) {
         throw new Error('Passwords do not match')
@@ -48,20 +68,19 @@ export default function RegisterPage() {
       })
 
       const data = await response.json()
+      if (!response.ok) throw new Error(data.error || 'Registration failed')
 
-      if (!response.ok) {
-        throw new Error(data.error || 'Registration failed')
+      // Email provided → redirect to verification page
+      if (data.requiresVerification) {
+        toast.success('Account created! Please verify your email.')
+        router.push(`/verify-email?email=${encodeURIComponent(data.email)}`)
+        return
       }
 
+      // Phone-only → log in immediately
       register(data.user, data.tokens.accessToken, data.tokens.refreshToken)
       toast.success('Account created successfully!')
-      if (data.user.role === 'ADMIN') {
-        router.push('/admin')
-      } else if (data.user.role === 'FRIEND') {
-        router.push('/friend/dashboard')
-      } else {
-        router.push('/dashboard')
-      }
+      redirectByRole(data.user.role)
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Registration failed')
     } finally {
@@ -77,7 +96,6 @@ export default function RegisterPage() {
       <div className="absolute bottom-0 left-1/4 w-96 h-96 bg-violet-500/5 rounded-full blur-3xl pointer-events-none" />
 
       <div className="w-full max-w-sm relative">
-        {/* Logo */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-14 h-14 bg-amber-500/10 border border-amber-500/20 rounded-2xl mb-4">
             <TrendingUp className="text-amber-400" size={28} />
@@ -87,23 +105,32 @@ export default function RegisterPage() {
         </div>
 
         <div className="bg-slate-800/60 border border-slate-700/60 rounded-2xl p-6 backdrop-blur-sm">
-          <h2 className="text-lg font-semibold text-slate-100 mb-6">Create Account</h2>
+          <h2 className="text-lg font-semibold text-slate-100 mb-5">Create Account</h2>
+
+          <div className="flex justify-center mb-4">
+            <GoogleLogin
+              onSuccess={handleGoogleSuccess}
+              onError={() => toast.error('Google sign-up failed')}
+              theme="filled_black"
+              shape="rectangular"
+              text="signup_with"
+              width="320"
+            />
+          </div>
+
+          <div className="flex items-center gap-3 mb-4">
+            <div className="flex-1 h-px bg-slate-700/60" />
+            <span className="text-slate-500 text-xs">or</span>
+            <div className="flex-1 h-px bg-slate-700/60" />
+          </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label htmlFor="name" className="label">Full Name <span className="text-red-400">*</span></label>
               <div className="relative">
                 <User className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={16} />
-                <input
-                  id="name"
-                  type="text"
-                  name="name"
-                  placeholder="John Doe"
-                  value={formData.name}
-                  onChange={handleChange}
-                  className="input pl-9"
-                  required
-                />
+                <input id="name" type="text" name="name" placeholder="John Doe"
+                  value={formData.name} onChange={handleChange} className="input pl-9" required />
               </div>
             </div>
 
@@ -111,36 +138,21 @@ export default function RegisterPage() {
               <label htmlFor="phone" className="label">Phone Number <span className="text-red-400">*</span></label>
               <div className="relative">
                 <Phone className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={16} />
-                <input
-                  id="phone"
-                  type="tel"
-                  name="phone"
-                  placeholder="9876543210"
-                  value={formData.phone}
-                  onChange={handleChange}
-                  className="input pl-9"
-                  inputMode="numeric"
-                  required
-                />
+                <input id="phone" type="tel" name="phone" placeholder="9876543210"
+                  value={formData.phone} onChange={handleChange}
+                  className="input pl-9" inputMode="numeric" required />
               </div>
             </div>
 
             <div>
               <label htmlFor="email" className="label">
-                Email <span className="text-slate-500 font-normal text-xs">(optional)</span>
+                Email <span className="text-slate-500 font-normal text-xs">(optional — enables email login + verification)</span>
               </label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={16} />
-                <input
-                  id="email"
-                  type="email"
-                  name="email"
-                  placeholder="john@example.com"
-                  value={formData.email}
-                  onChange={handleChange}
-                  className="input pl-9"
-                  autoComplete="email"
-                />
+                <input id="email" type="email" name="email" placeholder="john@example.com"
+                  value={formData.email} onChange={handleChange}
+                  className="input pl-9" autoComplete="email" />
               </div>
             </div>
 
@@ -148,22 +160,12 @@ export default function RegisterPage() {
               <label htmlFor="password" className="label">Password <span className="text-red-400">*</span></label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={16} />
-                <input
-                  id="password"
-                  type={showPassword ? 'text' : 'password'}
-                  name="password"
-                  placeholder="At least 8 characters"
-                  value={formData.password}
-                  onChange={handleChange}
-                  className="input pl-9 pr-10"
-                  required
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(v => !v)}
+                <input id="password" type={showPassword ? 'text' : 'password'} name="password"
+                  placeholder="At least 8 characters" value={formData.password}
+                  onChange={handleChange} className="input pl-9 pr-10" required />
+                <button type="button" onClick={() => setShowPassword(v => !v)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors"
-                  aria-label={showPassword ? 'Hide password' : 'Show password'}
-                >
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}>
                   {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
@@ -173,34 +175,20 @@ export default function RegisterPage() {
               <label htmlFor="confirmPassword" className="label">Confirm Password <span className="text-red-400">*</span></label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={16} />
-                <input
-                  id="confirmPassword"
-                  type={showConfirm ? 'text' : 'password'}
-                  name="confirmPassword"
-                  placeholder="Confirm your password"
-                  value={formData.confirmPassword}
-                  onChange={handleChange}
-                  className="input pl-9 pr-10"
-                  required
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowConfirm(v => !v)}
+                <input id="confirmPassword" type={showConfirm ? 'text' : 'password'} name="confirmPassword"
+                  placeholder="Confirm your password" value={formData.confirmPassword}
+                  onChange={handleChange} className="input pl-9 pr-10" required />
+                <button type="button" onClick={() => setShowConfirm(v => !v)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors"
-                  aria-label={showConfirm ? 'Hide password' : 'Show password'}
-                >
+                  aria-label={showConfirm ? 'Hide password' : 'Show password'}>
                   {showConfirm ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
             </div>
 
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="btn-primary w-full mt-2"
-            >
+            <button type="submit" disabled={isLoading} className="btn-primary w-full mt-2">
               {isLoading ? (
-                <span className="flex items-center gap-2">
+                <span className="flex items-center justify-center gap-2">
                   <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
