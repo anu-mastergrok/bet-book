@@ -63,8 +63,7 @@ model Notification {
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@index([userId])
-  @@index([read])
+  @@index([userId, read])
 }
 
 enum SettlementStatus {
@@ -167,4 +166,5 @@ model ClientPayment {
 
   @@index([userId])
   @@index([clientName])
+  @@index([clientUserId])
 }
