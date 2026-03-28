@@ -6,6 +6,7 @@ import { useAuth } from '@/context/AuthContext'
 import { LayoutDashboard, BookOpen, Bell } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { NotificationBell } from '@/components/NotificationBell'
 
 export default function FriendLayout({ children }: { children: React.ReactNode }) {
   const { user, isLoading, logout } = useAuth()
@@ -31,12 +32,15 @@ export default function FriendLayout({ children }: { children: React.ReactNode }
       {/* Top header */}
       <header className="sticky top-0 z-10 bg-slate-900 border-b border-slate-800 px-4 py-3 flex items-center justify-between">
         <span className="font-bold text-amber-400 text-lg">Bet Book</span>
-        <button
-          onClick={() => { logout(); router.push('/login') }}
-          className="text-slate-400 hover:text-white text-sm"
-        >
-          Logout
-        </button>
+        <div className="flex items-center gap-4">
+          <NotificationBell />
+          <button
+            onClick={() => { logout(); router.push('/login') }}
+            className="text-slate-400 hover:text-white text-sm"
+          >
+            Logout
+          </button>
+        </div>
       </header>
 
       <main className="max-w-2xl mx-auto px-4 py-6">{children}</main>
