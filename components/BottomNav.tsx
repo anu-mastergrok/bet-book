@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, Plus, Users, BookOpen, Zap } from 'lucide-react'
+import { LayoutDashboard, Plus, Users, BookOpen, Zap, UserCheck } from 'lucide-react'
 
 interface Props {
   role: 'USER' | 'ADMIN'
@@ -135,6 +135,24 @@ export function BottomNav({ role }: Props) {
             }`}
           >
             History
+          </span>
+        </Link>
+
+        {/* Friends Tab */}
+        <Link
+          href="/dashboard/friends"
+          className="flex flex-col items-center gap-0.5 py-2 flex-1"
+        >
+          <UserCheck
+            size={24}
+            className={isActive('/dashboard/friends') ? 'text-amber-400' : 'text-slate-400'}
+          />
+          <span
+            className={`text-[10px] font-medium ${
+              isActive('/dashboard/friends') ? 'text-amber-400' : 'text-slate-500'
+            }`}
+          >
+            Friends
           </span>
         </Link>
       </div>
