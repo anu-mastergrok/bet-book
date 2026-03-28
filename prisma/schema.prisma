@@ -21,8 +21,9 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  betEntries  BetEntry[] @relation("UserBetEntries")
-  clientBets  BetEntry[] @relation("ClientBets")
+  betEntries     BetEntry[]      @relation("UserBetEntries")
+  clientBets     BetEntry[]      @relation("ClientBets")
+  clientPayments ClientPayment[] @relation("UserClientPayments")
 
   @@index([phone])
   @@index([role])
@@ -67,6 +68,7 @@ model Match {
   teamB     String
   matchDate DateTime
   venue     String
+  matchType String   @default("T20")
   status    String   @default("upcoming") // upcoming, live, completed
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -94,6 +96,9 @@ model BetEntry {
   settlementStatus  SettlementStatus @default(pending)
   linkedMatchId     String?  // FK to Match if settlement = lost_in_another_match
   notes             String?
+  paymentMethod     String?
+  upiTransactionId  String?
+  paymentNote       String?
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
@@ -108,4 +113,20 @@ model BetEntry {
   @@index([linkedMatchId])
   @@index([settlementStatus])
   @@index([result])
+}
+
+model ClientPayment {
+  id         String   @id @default(cuid())
+  userId     String
+  clientName String
+  amount     Decimal  @db.Decimal(10, 2)
+  method     String   @default("cash")
+  upiRef     String?
+  note       String?
+  createdAt  DateTime @default(now())
+
+  user User @relation("UserClientPayments", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([clientName])
 }
