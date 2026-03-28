@@ -8,15 +8,14 @@ const config: Config = {
   ],
   theme: {
     extend: {
-      colors: {
-        primary: '#3b82f6',
-        success: '#10b981',
-        danger: '#ef4444',
-        warning: '#f59e0b',
+      fontFamily: {
+        sans: ['Outfit', 'sans-serif'],
       },
     },
   },
-  plugins: [],
-  darkMode: 'class',
+  plugins: [require('daisyui')],
+  daisyui: {
+    themes: ['night', 'corporate'],
+  },
 }
 export default config
