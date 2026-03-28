@@ -1,0 +1,25 @@
+app/api/cricket/sync/route.ts
+  23f9709f12aec394 10-12
+lib/cricket-sync.ts
+  23f9709f12aec394 133-136
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.20",
+  "base_commit_sha": "e9ae733363c39ab75086b23468abc8e90e27f53d",
+  "prompts": {
+    "23f9709f12aec394": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "3b02e19c-0535-43b5-aa66-01f66669d9e1",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "S Kumar <skumar@ascend-marketing.com>",
+      "messages": [],
+      "total_additions": 7,
+      "total_deletions": 11,
+      "accepted_lines": 7,
+      "overriden_lines": 0
+    }
+  }
+}
