@@ -1,6 +1,6 @@
 'use client'
 
-import { ReactNode, useEffect } from 'react'
+import { ReactNode, useEffect, useRef } from 'react'
 import { X, AlertTriangle } from 'lucide-react'
 
 interface ModalProps {
@@ -19,12 +19,36 @@ const sizeClasses = {
 }
 
 export function Modal({ isOpen, onClose, title, children, size = 'md' }: ModalProps) {
+  const modalRef = useRef<HTMLDivElement>(null)
+
   useEffect(() => {
     if (!isOpen) return
     const handleKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
     document.addEventListener('keydown', handleKey)
     return () => document.removeEventListener('keydown', handleKey)
   }, [isOpen, onClose])
+
+  useEffect(() => {
+    if (!isOpen) return
+    const modal = modalRef.current
+    if (!modal) return
+    const focusable = modal.querySelectorAll<HTMLElement>(
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+    )
+    const first = focusable[0]
+    const last = focusable[focusable.length - 1]
+    first?.focus()
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== 'Tab') return
+      if (e.shiftKey) {
+        if (document.activeElement === first) { e.preventDefault(); last?.focus() }
+      } else {
+        if (document.activeElement === last) { e.preventDefault(); first?.focus() }
+      }
+    }
+    modal.addEventListener('keydown', handleKeyDown)
+    return () => modal.removeEventListener('keydown', handleKeyDown)
+  }, [isOpen])
 
   if (!isOpen) return null
 
@@ -35,7 +59,7 @@ export function Modal({ isOpen, onClose, title, children, size = 'md' }: ModalPr
       aria-modal="true"
       aria-labelledby={title ? 'modal-title' : undefined}
     >
-      <div className={`modal-box ${sizeClasses[size]}`}>
+      <div ref={modalRef} className={`modal-box ${sizeClasses[size]}`}>
         <div className="flex justify-between items-center mb-5">
           {title && (
             <h2 id="modal-title" className="text-lg font-semibold">{title}</h2>
@@ -50,7 +74,7 @@ export function Modal({ isOpen, onClose, title, children, size = 'md' }: ModalPr
         </div>
         {children}
       </div>
-      <div className="modal-backdrop" onClick={onClose} />
+      <div className="modal-backdrop" onClick={onClose} aria-hidden="true" />
     </div>
   )
 }
@@ -71,7 +95,7 @@ export function ConfirmModal({
   confirmText = 'Confirm', cancelText = 'Cancel', isDangerous = false,
 }: ConfirmModalProps) {
   return (
-    <Modal isOpen={isOpen} onClose={onCancel} size="sm">
+    <Modal isOpen={isOpen} onClose={onCancel} title={title} size="sm">
       <div className="flex flex-col items-center text-center gap-4 pb-2">
         {isDangerous && (
           <div className="w-12 h-12 rounded-full bg-error/10 border border-error/20 flex items-center justify-center">
@@ -79,7 +103,6 @@ export function ConfirmModal({
           </div>
         )}
         <div>
-          <h2 className="text-lg font-semibold mb-2">{title}</h2>
           <p className="text-base-content/60 text-sm leading-relaxed">{message}</p>
         </div>
         <div className="flex gap-3 w-full mt-2">

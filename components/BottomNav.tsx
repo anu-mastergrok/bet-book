@@ -1,5 +1,6 @@
 'use client'
 
+import type { ComponentType } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
@@ -19,7 +20,7 @@ interface Props {
 interface TabItem {
   href: string
   label: string
-  icon: React.ComponentType<{ className?: string }>
+  icon: ComponentType<{ className?: string }>
 }
 
 const adminTabs: TabItem[] = [
@@ -51,8 +52,12 @@ const tabsByRole: Record<Props['role'], TabItem[]> = {
 export function BottomNav({ role }: Props) {
   const pathname = usePathname()
 
-  const isActive = (href: string) =>
-    pathname === href || pathname.startsWith(href + '/')
+  const isActive = (href: string) => {
+    if (pathname === href) return true
+    // Only apply prefix matching for non-root paths
+    if (href === '/admin' || href === '/dashboard') return false
+    return pathname.startsWith(href + '/')
+  }
 
   const tabs = tabsByRole[role]
   const showFab =

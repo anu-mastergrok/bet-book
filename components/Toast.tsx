@@ -50,7 +50,8 @@ function Toast({ message, type, duration = 3000, onClose }: ToastProps) {
     }, 50)
     const timer = setTimeout(() => { setVisible(false); onClose?.() }, duration)
     return () => { clearTimeout(timer); clearInterval(interval) }
-  }, [duration, onClose])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [duration])
 
   if (!visible) return null
 
