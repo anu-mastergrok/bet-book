@@ -24,6 +24,9 @@ model User {
   betEntries     BetEntry[]      @relation("UserBetEntries")
   clientBets     BetEntry[]      @relation("ClientBets")
   clientPayments ClientPayment[] @relation("UserClientPayments")
+  friendLinks    FriendLink[]    @relation("UserFriends")
+  friendOf       FriendLink[]    @relation("FriendOf")
+  notifications  Notification[]
 
   @@index([phone])
   @@index([role])
@@ -31,7 +34,36 @@ model User {
 
 enum Role {
   USER
+  FRIEND
   ADMIN
+}
+
+model FriendLink {
+  id        String   @id @default(cuid())
+  userId    String
+  friendId  String
+  createdAt DateTime @default(now())
+
+  user   User @relation("UserFriends", fields: [userId], references: [id], onDelete: Cascade)
+  friend User @relation("FriendOf", fields: [friendId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, friendId])
+  @@index([userId])
+  @@index([friendId])
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  title     String
+  body      String
+  read      Boolean  @default(false)
+  link      String?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, read])
 }
 
 enum SettlementStatus {
@@ -48,37 +80,45 @@ enum BetResult {
 }
 
 model Series {
-  id        String   @id @default(cuid())
-  name      String
-  startDate DateTime
-  endDate   DateTime
-  status    String   @default("active") // active, completed
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id          String   @id @default(cuid())
+  name        String
+  startDate   DateTime
+  endDate     DateTime
+  status      String   @default("active") // active, completed
+  cricbuzzId  String?  @unique
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   matches Match[]
 
   @@index([status])
+  @@index([cricbuzzId])
 }
 
 model Match {
-  id        String   @id @default(cuid())
-  seriesId  String
-  teamA     String
-  teamB     String
-  matchDate DateTime
-  venue     String
-  matchType String   @default("T20")
-  status    String   @default("upcoming") // upcoming, live, completed
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id          String   @id @default(cuid())
+  seriesId    String
+  teamA       String
+  teamB       String
+  matchDate   DateTime
+  venue       String
+  matchType   String   @default("T20")
+  status      String   @default("upcoming") // upcoming, live, completed
+  cricbuzzId  String?  @unique
+  isActivated Boolean  @default(false)
+  liveScore   String?
+  result      String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
-  series    Series   @relation(fields: [seriesId], references: [id], onDelete: Cascade)
+  series     Series     @relation(fields: [seriesId], references: [id], onDelete: Cascade)
   betEntries BetEntry[] @relation("MatchBets")
   linkedBets BetEntry[] @relation("LinkedMatches")
 
   @@index([seriesId])
   @@index([status])
+  @@index([cricbuzzId])
+  @@index([isActivated])
 }
 
 model BetEntry {
@@ -98,9 +138,13 @@ model BetEntry {
   notes             String?
   paymentMethod     String?
   upiTransactionId  String?
-  paymentNote       String?
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  paymentNote        String?
+  confirmedByFriend  Boolean   @default(false)
+  disputeStatus      String?
+  disputeNote        String?
+  disputeResolvedAt  DateTime?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
 
   match         Match  @relation("MatchBets", fields: [matchId], references: [id], onDelete: Cascade)
   user          User   @relation("UserBetEntries", fields: [userId], references: [id], onDelete: Cascade)
@@ -116,17 +160,19 @@ model BetEntry {
 }
 
 model ClientPayment {
-  id          String   @id @default(cuid())
-  userId      String
-  clientName  String
-  amount      Decimal  @db.Decimal(10, 2)
-  method      String   @default("cash")
-  upiRef      String?
-  note        String?
-  createdAt   DateTime @default(now())
+  id           String   @id @default(cuid())
+  userId       String
+  clientName   String
+  clientUserId String?
+  amount       Decimal  @db.Decimal(10, 2)
+  method       String   @default("cash")
+  upiRef       String?
+  note         String?
+  createdAt    DateTime @default(now())
 
-  user  User  @relation("UserClientPayments", fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation("UserClientPayments", fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([clientName])
+  @@index([clientUserId])
 }
