@@ -7,11 +7,21 @@ import { useToast, ToastContainer } from '@/components/Toast'
 import { Modal, ConfirmModal } from '@/components/Modal'
 import {
   LogOut, Plus, TrendingUp, TrendingDown, Users, Zap,
-  Loader, BarChart3, Calendar, Clock, Shield, Edit2, Trash2,
+  Loader, BarChart3, Calendar, Clock, Shield, Edit2, Trash2, RefreshCw,
 } from 'lucide-react'
 import Link from 'next/link'
 import { formatINR } from '@/lib/format'
 import { BottomNav } from '@/components/BottomNav'
+
+interface ImportedMatch {
+  id: string
+  teamA: string
+  teamB: string
+  matchDate: string
+  venue: string
+  matchType: string
+  series: { id: string; name: string }
+}
 
 interface SummaryStats {
   totalUsers: number
@@ -36,6 +46,9 @@ interface SeriesData {
     matchDate?: string
     venue?: string
     matchType?: string
+    liveScore?: string
+    result?: string
+    isActivated?: boolean
     _count?: { betEntries: number }
   }>
 }
@@ -83,6 +96,9 @@ export default function AdminPage() {
   const [isEditMatchModalOpen, setIsEditMatchModalOpen] = useState(false)
   const [deletingMatchId, setDeletingMatchId] = useState<string | null>(null)
   const [isDeleteMatchModalOpen, setIsDeleteMatchModalOpen] = useState(false)
+  const [importedMatches, setImportedMatches] = useState<ImportedMatch[]>([])
+  const [isSyncing, setIsSyncing] = useState(false)
+  const [activatingId, setActivatingId] = useState<string | null>(null)
 
   useEffect(() => {
     if (!user || user.role !== 'ADMIN') { router.push('/login'); return }
@@ -99,6 +115,16 @@ export default function AdminPage() {
       setStats(data.stats)
       setSeriesData(data.seriesOverview)
       setRecentBets(data.recentBets)
+
+      const matchesRes = await fetch('/api/matches?activated=false', {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      })
+      if (matchesRes.ok) {
+        const { matches } = await matchesRes.json()
+        setImportedMatches(matches)
+      } else {
+        toast.error('Failed to load imported matches')
+      }
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Failed to load data')
     } finally {
@@ -237,6 +263,40 @@ export default function AdminPage() {
     } catch (e) { toast.error(e instanceof Error ? e.message : 'Error') }
   }
 
+  const handleSyncNow = async () => {
+    setIsSyncing(true)
+    try {
+      const res = await fetch('/api/cricket/sync', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${accessToken}` },
+      })
+      if (!res.ok) throw new Error('Sync failed')
+      toast.success('Sync completed')
+      fetchData()
+    } catch {
+      toast.error('Sync failed')
+    } finally {
+      setIsSyncing(false)
+    }
+  }
+
+  const handleActivateMatch = async (matchId: string) => {
+    setActivatingId(matchId)
+    try {
+      const res = await fetch(`/api/matches/${matchId}/activate`, {
+        method: 'PATCH',
+        headers: { Authorization: `Bearer ${accessToken}` },
+      })
+      if (!res.ok) throw new Error('Failed to activate')
+      toast.success('Match activated')
+      setImportedMatches(prev => prev.filter(m => m.id !== matchId))
+    } catch {
+      toast.error('Failed to activate match')
+    } finally {
+      setActivatingId(null)
+    }
+  }
+
   if (!user || isLoading) {
     return (
       <div className="flex items-center justify-center min-h-dvh bg-slate-950">
@@ -281,6 +341,14 @@ export default function AdminPage() {
               <Zap size={14} />
               <span>All Bets</span>
             </Link>
+            <button
+              onClick={handleSyncNow}
+              disabled={isSyncing}
+              className="btn-ghost text-xs px-3 py-2 flex items-center gap-1.5"
+            >
+              {isSyncing ? <Loader className="animate-spin" size={14} /> : <RefreshCw size={14} />}
+              <span className="hidden sm:inline">{isSyncing ? 'Syncing...' : 'Sync Now'}</span>
+            </button>
             <button onClick={handleLogout} className="btn-ghost text-xs px-3 py-2">
               <LogOut size={14} />
               <span className="hidden sm:inline">Logout</span>
@@ -401,12 +469,21 @@ export default function AdminPage() {
                             </div>
                           </div>
                           <div className="flex items-center gap-2 mt-1">
-                            <span className={`text-xs ${
-                              match.status === 'live' ? 'text-emerald-400' :
-                              match.status === 'completed' ? 'text-slate-500' : 'text-amber-400'
-                            }`}>
-                              {match.status}
-                            </span>
+                            {match.status === 'live' ? (
+                              <span className="inline-flex items-center gap-1">
+                                <span className="relative flex h-2 w-2">
+                                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                                </span>
+                                <span className="text-emerald-400 text-xs font-medium">LIVE</span>
+                              </span>
+                            ) : (
+                              <span className={`text-xs ${
+                                match.status === 'completed' ? 'text-slate-500' : 'text-amber-400'
+                              }`}>
+                                {match.status}
+                              </span>
+                            )}
                             {match.matchType && (
                               <>
                                 <span className="text-slate-600">·</span>
@@ -416,6 +493,12 @@ export default function AdminPage() {
                             <span className="text-slate-600">·</span>
                             <span className="text-xs text-slate-500">{match._count?.betEntries || 0} bets</span>
                           </div>
+                          {match.liveScore && match.status === 'live' && (
+                            <div className="text-xs text-emerald-400 mt-1 truncate">{match.liveScore}</div>
+                          )}
+                          {match.result && match.status === 'completed' && (
+                            <div className="text-xs text-slate-400 mt-1 truncate">{match.result}</div>
+                          )}
                         </div>
                       ))}
                     </div>
@@ -425,6 +508,38 @@ export default function AdminPage() {
             )}
           </div>
         </div>
+
+        {/* Imported Matches */}
+        {importedMatches.length > 0 && (
+          <div className="card p-0 overflow-hidden">
+            <div className="px-6 py-4 border-b border-slate-700/60 flex justify-between items-center">
+              <h2 className="text-sm font-semibold text-slate-300">Imported Matches</h2>
+              <span className="text-xs text-slate-500">{importedMatches.length} pending activation</span>
+            </div>
+            <div className="divide-y divide-slate-700/40">
+              {importedMatches.map(match => (
+                <div key={match.id} className="px-6 py-3 flex items-center justify-between gap-4">
+                  <div className="min-w-0">
+                    <div className="text-sm font-medium text-slate-200 truncate">
+                      {match.teamA} vs {match.teamB}
+                    </div>
+                    <div className="text-xs text-slate-500 mt-0.5">
+                      {match.series.name} · {match.matchType} · {new Date(match.matchDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                      {match.venue && ` · ${match.venue}`}
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => handleActivateMatch(match.id)}
+                    disabled={activatingId === match.id}
+                    className="btn-primary text-xs px-3 py-1.5 shrink-0"
+                  >
+                    {activatingId === match.id ? <Loader className="animate-spin" size={12} /> : 'Activate'}
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Recent Bets */}
         <div className="card p-0 overflow-hidden">

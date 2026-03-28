@@ -23,6 +23,9 @@ interface Bet {
     teamB: string
     matchDate: string
     matchType: string
+    status?: string
+    liveScore?: string
+    result?: string
     series: { name: string }
   }
 }
@@ -103,8 +106,21 @@ export default function FriendBetsPage() {
         <div key={bet.id} className="bg-slate-900 rounded-xl p-4 border border-slate-800 space-y-3">
           <div className="flex justify-between items-start">
             <div>
-              <p className="font-medium text-white">{bet.match.teamA} vs {bet.match.teamB}</p>
+              <p className="font-medium text-white">
+                {bet.match.teamA} vs {bet.match.teamB}
+                {bet.match.status === 'live' && (
+                  <span className="inline-flex items-center gap-1 ml-1">
+                    <span className="relative flex h-2 w-2">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                    </span>
+                  </span>
+                )}
+              </p>
               <p className="text-xs text-slate-400">{bet.match.series.name} · {bet.match.matchType} · {new Date(bet.match.matchDate).toLocaleDateString('en-IN')}</p>
+              {bet.match.status === 'completed' && bet.match.result && (
+                <p className="text-xs text-slate-500 truncate">{bet.match.result}</p>
+              )}
             </div>
             <span className={`text-xs px-2 py-1 rounded-full ${
               bet.result === 'win' ? 'bg-emerald-900 text-emerald-300'

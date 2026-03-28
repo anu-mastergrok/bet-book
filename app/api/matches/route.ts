@@ -10,8 +10,12 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url)
     const seriesId = searchParams.get('seriesId')
+    const activated = searchParams.get('activated')
 
-    const where = seriesId ? { seriesId } : {}
+    const where: Record<string, unknown> = {}
+    if (seriesId) where.seriesId = seriesId
+    if (activated === 'true') where.isActivated = true
+    else if (activated === 'false') where.isActivated = false
 
     const matches = await prisma.match.findMany({
       where,
@@ -44,7 +48,7 @@ export async function POST(request: NextRequest) {
     }
 
     const match = await prisma.match.create({
-      data: parsed.data,
+      data: { ...parsed.data, isActivated: true },
       include: {
         series: true,
       },

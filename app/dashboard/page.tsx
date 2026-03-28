@@ -30,6 +30,8 @@ interface Bet {
     teamB: string
     status: string
     matchDate: string
+    liveScore?: string
+    result?: string
     series: { id: string; name: string }
   }
 }
@@ -322,8 +324,19 @@ export default function DashboardPage() {
                         </Link>
                       </td>
                       <td>
-                        <div className="font-medium">{bet.match.teamA} vs {bet.match.teamB}</div>
+                        <div className="font-medium flex items-center gap-1.5">
+                          {bet.match.teamA} vs {bet.match.teamB}
+                          {bet.match.status === 'live' && (
+                            <span className="relative flex h-2 w-2 shrink-0">
+                              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                            </span>
+                          )}
+                        </div>
                         <div className="text-xs text-slate-500 capitalize">{bet.match.status}</div>
+                        {bet.match.status === 'completed' && bet.match.result && (
+                          <div className="text-xs text-slate-400 mt-0.5 truncate max-w-[200px]">{bet.match.result}</div>
+                        )}
                       </td>
                       <td className="font-medium">{bet.clientName}</td>
                       <td className="text-slate-300">
