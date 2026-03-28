@@ -12,15 +12,11 @@ const JWT_EXPIRY = process.env.JWT_EXPIRY || '1h'
 const JWT_REFRESH_EXPIRY = process.env.JWT_REFRESH_EXPIRY || '7d'
 
 export function generateAccessToken(payload: TokenPayload): string {
-  return jwt.sign(payload, JWT_SECRET, {
-    expiresIn: JWT_EXPIRY as SignOptions['expiresIn'],
-  })
+  return jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRY } as SignOptions)
 }
 
 export function generateRefreshToken(payload: TokenPayload): string {
-  return jwt.sign(payload, JWT_REFRESH_SECRET, {
-    expiresIn: JWT_REFRESH_EXPIRY as SignOptions['expiresIn'],
-  })
+  return jwt.sign(payload, JWT_REFRESH_SECRET, { expiresIn: JWT_REFRESH_EXPIRY } as SignOptions)
 }
 
 export function verifyAccessToken(token: string): TokenPayload | null {
