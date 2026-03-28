@@ -1,0 +1,23 @@
+docs/superpowers/plans/2026-03-29-daisyui-integration.md
+  23f9709f12aec394 1-1839
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.22",
+  "base_commit_sha": "44efe53865643ae694409d52de2ac9f01b70f9a5",
+  "prompts": {
+    "23f9709f12aec394": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "3b02e19c-0535-43b5-aa66-01f66669d9e1",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "S Kumar <skumar@ascend-marketing.com>",
+      "messages": [],
+      "total_additions": 1839,
+      "total_deletions": 0,
+      "accepted_lines": 2379,
+      "overriden_lines": 0
+    }
+  }
+}
