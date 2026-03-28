@@ -108,6 +108,7 @@ function VerifyEmailForm() {
                   <KeyRound size={16} className="text-base-content/40 shrink-0" />
                   <input
                     id="otp"
+                    name="otp"
                     type="text"
                     inputMode="numeric"
                     maxLength={6}

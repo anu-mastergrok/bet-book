@@ -166,10 +166,10 @@ export default function RegisterPage() {
                   <Lock size={16} className="text-base-content/40 shrink-0" />
                   <input id="password" type={showPassword ? 'text' : 'password'} name="password"
                     placeholder="At least 8 characters" value={formData.password}
-                    onChange={handleChange} className="grow" required />
+                    onChange={handleChange} className="grow" autoComplete="new-password" required />
                   <button type="button" onClick={() => setShowPassword(v => !v)}
                     className="btn btn-ghost btn-xs btn-circle"
-                    aria-label={showPassword ? 'Hide' : 'Show'}>
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}>
                     {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
                   </button>
                 </label>
@@ -183,10 +183,10 @@ export default function RegisterPage() {
                   <Lock size={16} className="text-base-content/40 shrink-0" />
                   <input id="confirmPassword" type={showConfirm ? 'text' : 'password'} name="confirmPassword"
                     placeholder="Confirm your password" value={formData.confirmPassword}
-                    onChange={handleChange} className="grow" required />
+                    onChange={handleChange} className="grow" autoComplete="new-password" required />
                   <button type="button" onClick={() => setShowConfirm(v => !v)}
                     className="btn btn-ghost btn-xs btn-circle"
-                    aria-label={showConfirm ? 'Hide' : 'Show'}>
+                    aria-label={showConfirm ? 'Hide confirm password' : 'Show confirm password'}>
                     {showConfirm ? <EyeOff size={15} /> : <Eye size={15} />}
                   </button>
                 </label>
