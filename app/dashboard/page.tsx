@@ -39,11 +39,34 @@ interface Bet {
 
 interface PnLData { series: string; pnl: number }
 
-const CHART_COLORS = {
-  win: '#10b981',
-  loss: '#ef4444',
-  pending: '#f59e0b',
-  bar: '#8b5cf6',
+function useDaisyUIColors() {
+  const [colors, setColors] = useState({
+    primary: '#570df8',
+    success: '#00a96e',
+    error: '#ff5861',
+    warning: '#ffbe00',
+    baseContent: '#d1d5db',
+    base200: '#1d232a',
+    base300: '#191e24',
+  })
+  useEffect(() => {
+    const root = document.documentElement
+    const style = getComputedStyle(root)
+    const resolve = (v: string) => {
+      const val = style.getPropertyValue(v).trim()
+      return val ? `oklch(${val})` : undefined
+    }
+    setColors(prev => ({
+      primary: resolve('--p') ?? prev.primary,
+      success: resolve('--su') ?? prev.success,
+      error: resolve('--er') ?? prev.error,
+      warning: resolve('--wa') ?? prev.warning,
+      baseContent: resolve('--bc') ?? prev.baseContent,
+      base200: resolve('--b2') ?? prev.base200,
+      base300: resolve('--b3') ?? prev.base300,
+    }))
+  }, [])
+  return colors
 }
 
 const CustomTooltip = ({ active, payload, label }: any) => {
@@ -66,6 +89,7 @@ export default function DashboardPage() {
   const { user, logout, accessToken } = useAuth()
   const toast = useToast()
   const { theme, toggle } = useTheme()
+  const chartColors = useDaisyUIColors()
   const [isLoading, setIsLoading] = useState(true)
   const [bets, setBets] = useState<Bet[]>([])
   const [pnlData, setPnlData] = useState<PnLData[]>([])
@@ -130,7 +154,7 @@ export default function DashboardPage() {
     { name: 'Pending', value: pendingCount },
   ].filter(d => d.value > 0)
 
-  const pieColors = [CHART_COLORS.win, CHART_COLORS.loss, CHART_COLORS.pending]
+  const pieColors = [chartColors.success, chartColors.error, chartColors.warning]
 
   return (
     <div className="min-h-dvh bg-base-100 pb-20 sm:pb-0">
@@ -205,13 +229,13 @@ export default function DashboardPage() {
               {pnlData.length > 0 ? (
                 <ResponsiveContainer width="100%" height={240}>
                   <BarChart data={pnlData} margin={{ top: 4, right: 4, left: -16, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
-                    <XAxis dataKey="series" tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} />
-                    <YAxis tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} />
+                    <CartesianGrid strokeDasharray="3 3" stroke={chartColors.base300} vertical={false} />
+                    <XAxis dataKey="series" tick={{ fill: chartColors.baseContent, fontSize: 11 }} axisLine={false} tickLine={false} />
+                    <YAxis tick={{ fill: chartColors.baseContent, fontSize: 11 }} axisLine={false} tickLine={false} />
                     <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(148,163,184,0.05)' }} />
-                    <Bar dataKey="pnl" fill="#8b5cf6" radius={[4, 4, 0, 0]}>
+                    <Bar dataKey="pnl" fill={chartColors.primary} radius={[4, 4, 0, 0]}>
                       {pnlData.map((entry, index) => (
-                        <Cell key={index} fill={entry.pnl >= 0 ? '#8b5cf6' : '#ef4444'} />
+                        <Cell key={index} fill={entry.pnl >= 0 ? chartColors.primary : chartColors.error} />
                       ))}
                     </Bar>
                   </BarChart>
@@ -245,12 +269,12 @@ export default function DashboardPage() {
                       ))}
                     </Pie>
                     <Legend
-                      formatter={(value) => <span style={{ color: '#94a3b8', fontSize: 12 }}>{value}</span>}
+                      formatter={(value) => <span style={{ color: chartColors.baseContent, fontSize: 12 }}>{value}</span>}
                     />
                     <Tooltip
-                      contentStyle={{ background: '#1e293b', border: '1px solid #334155', borderRadius: 8, fontSize: 12 }}
-                      labelStyle={{ color: '#94a3b8' }}
-                      itemStyle={{ color: '#f8fafc' }}
+                      contentStyle={{ background: chartColors.base200, border: `1px solid ${chartColors.base300}`, borderRadius: 8, fontSize: 12 }}
+                      labelStyle={{ color: chartColors.baseContent }}
+                      itemStyle={{ color: chartColors.baseContent }}
                     />
                   </PieChart>
                 </ResponsiveContainer>
@@ -357,7 +381,7 @@ export default function DashboardPage() {
                             })
                             openWhatsApp(msg)
                           }}
-                          className="p-1.5 text-base-content/40 hover:text-[#25D366] hover:bg-green-500/10 rounded transition-colors"
+                          className="p-1.5 text-base-content/40 hover:text-success hover:bg-success/10 rounded transition-colors"
                           title="Share on WhatsApp"
                         >
                           <MessageCircle size={14} />
