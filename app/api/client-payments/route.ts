@@ -3,6 +3,7 @@ import prisma from '@/lib/db'
 import { clientPaymentSchema } from '@/lib/validators'
 import { jsonResponse, errorResponse, authenticateRequest } from '@/lib/middleware'
 import { handleError, ValidationError } from '@/lib/errors'
+import { createNotification } from '@/lib/notifications'
 
 export async function GET(request: NextRequest) {
   try {
@@ -33,7 +34,6 @@ export async function POST(request: NextRequest) {
     const user = await authenticateRequest(request)
 
     const body = await request.json()
-
     const parsed = clientPaymentSchema.safeParse(body)
     if (!parsed.success) {
       throw new ValidationError(
@@ -41,18 +41,74 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    const { clientName, clientUserId, amount, method, upiRef, note } = parsed.data
+
+    // Save the payment record
     const payment = await prisma.clientPayment.create({
       data: {
         userId: user.userId,
-        clientName: parsed.data.clientName,
-        amount: parsed.data.amount,
-        method: parsed.data.method,
-        upiRef: parsed.data.upiRef ?? null,
-        note: parsed.data.note ?? null,
+        clientName,
+        clientUserId: clientUserId ?? null,
+        amount,
+        method,
+        upiRef: upiRef ?? null,
+        note: note ?? null,
       },
     })
 
-    return jsonResponse({ message: 'Payment recorded successfully', payment }, 201)
+    // Bulk allocation: settle oldest pending bets for this friend
+    const betWhere: any = {
+      userId: user.userId,
+      settlementStatus: 'pending',
+    }
+    if (clientUserId) {
+      betWhere.clientUserId = clientUserId
+    } else {
+      betWhere.clientName = clientName
+    }
+
+    const pendingBets = await prisma.betEntry.findMany({
+      where: betWhere,
+      orderBy: { createdAt: 'asc' },
+      include: { match: true },
+    })
+
+    let remaining = amount
+    const settledBetIds: string[] = []
+
+    for (const bet of pendingBets) {
+      if (remaining <= 0) break
+
+      await prisma.betEntry.update({
+        where: { id: bet.id },
+        data: { settlementStatus: 'settled', paymentMethod: method },
+      })
+
+      settledBetIds.push(bet.id)
+
+      // Notify the friend for each settled bet (non-critical)
+      if (bet.clientUserId) {
+        const matchLabel = `${bet.match.teamA} vs ${bet.match.teamB}`
+        try {
+          await createNotification(
+            bet.clientUserId,
+            'Payment recorded',
+            `A payment of ₹${amount.toLocaleString('en-IN')} has been recorded. ${matchLabel} bet marked as settled.`,
+            `/friend/bets`
+          )
+        } catch {
+          // Non-critical
+        }
+      }
+
+      remaining -= Math.abs(Number(bet.profitLoss))
+    }
+
+    return jsonResponse({
+      message: 'Payment recorded successfully',
+      payment,
+      settledBets: settledBetIds.length,
+    }, 201)
   } catch (error) {
     const { statusCode, message } = handleError(error)
     return errorResponse(message, statusCode)
