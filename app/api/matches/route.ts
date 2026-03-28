@@ -15,6 +15,7 @@ export async function GET(request: NextRequest) {
     const where: Record<string, unknown> = {}
     if (seriesId) where.seriesId = seriesId
     if (activated === 'true') where.isActivated = true
+    else if (activated === 'false') where.isActivated = false
 
     const matches = await prisma.match.findMany({
       where,
