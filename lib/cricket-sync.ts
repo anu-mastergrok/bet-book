@@ -130,15 +130,10 @@ export async function syncLiveMatches(): Promise<void> {
       const info = m.matchInfo
       if (!info?.matchId) continue
       const cricbuzzId = String(info.matchId)
-      // Only update if the match exists locally and is not already live
-      const existing = await prisma.match.findUnique({ where: { cricbuzzId } })
-      if (existing && existing.status !== 'live') {
-        await prisma.match.updateMany({
-          where: { cricbuzzId, status: { not: 'live' } },
-          data: { status: 'live' },
-        })
-        console.log(`[cricket-sync] syncLiveMatches — transitioned match ${cricbuzzId} to live`)
-      }
+      await prisma.match.updateMany({
+        where: { cricbuzzId, status: { not: 'live' } },
+        data: { status: 'live' },
+      })
     }
 
     const liveMatches = await prisma.match.findMany({
