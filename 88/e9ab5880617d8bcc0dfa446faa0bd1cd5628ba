@@ -1,0 +1,23 @@
+app/dashboard/page.tsx
+  23f9709f12aec394 3,43-56,61-68,70-71,74-79,108-136,138-140
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.22",
+  "base_commit_sha": "88e9ab5880617d8bcc0dfa446faa0bd1cd5628ba",
+  "prompts": {
+    "23f9709f12aec394": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "3b02e19c-0535-43b5-aa66-01f66669d9e1",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "S Kumar <skumar@ascend-marketing.com>",
+      "messages": [],
+      "total_additions": 64,
+      "total_deletions": 55,
+      "accepted_lines": 64,
+      "overriden_lines": 0
+    }
+  }
+}
