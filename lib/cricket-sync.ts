@@ -4,6 +4,7 @@ import {
   fetchDomesticSeries,
   fetchUpcomingMatches,
   fetchRecentMatches,
+  fetchLiveMatches,
   fetchMatchScore,
   CricbuzzMatchInfo,
 } from '@/lib/cricbuzz-client'
@@ -26,8 +27,10 @@ function parseMatchType(matchDesc: string, matchFormat: string, seriesName: stri
 
 function mapState(state: string): 'upcoming' | 'live' | 'completed' {
   const s = (state ?? '').toLowerCase()
-  if (s === 'in progress' || s === 'live') return 'live'
-  if (s === 'complete' || s === 'completed') return 'completed'
+  if (s === 'complete' || s === 'result' || s === 'finished' || s === 'abandoned') return 'completed'
+  if (s === 'in progress' || s === 'live' || s === 'toss' || s === 'innings break' ||
+      s.includes('break') || s.includes('delay') || s.includes('rain') || s.includes('timeout') ||
+      s === 'tea' || s === 'lunch' || s === 'stumps' || s === 'strategic timeout') return 'live'
   return 'upcoming'
 }
 
@@ -48,8 +51,10 @@ export async function syncSeries(): Promise<void> {
 
     for (const s of all) {
       const cricbuzzId = String(s.id)
-      const startDate = s.startDt ? new Date(Number(s.startDt)) : new Date()
-      const endDate = s.endDt ? new Date(Number(s.endDt)) : new Date(Date.now() + 90 * 24 * 60 * 60 * 1000)
+      const startTs = Number(s.startDt)
+      const startDate = s.startDt && !isNaN(startTs) ? new Date(startTs) : new Date()
+      const endTs = Number(s.endDt)
+      const endDate = s.endDt && !isNaN(endTs) ? new Date(endTs) : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
 
       await prisma.series.upsert({
         where: { cricbuzzId },
@@ -119,6 +124,23 @@ export async function syncUpcomingMatches(): Promise<void> {
 export async function syncLiveMatches(): Promise<void> {
   console.log('[cricket-sync] syncLiveMatches start')
   try {
+    // Discover newly-live matches from Cricbuzz
+    const cricbuzzLive = await fetchLiveMatches()
+    for (const m of cricbuzzLive) {
+      const info = m.matchInfo
+      if (!info?.matchId) continue
+      const cricbuzzId = String(info.matchId)
+      // Only update if the match exists locally and is not already live
+      const existing = await prisma.match.findUnique({ where: { cricbuzzId } })
+      if (existing && existing.status !== 'live') {
+        await prisma.match.updateMany({
+          where: { cricbuzzId, status: { not: 'live' } },
+          data: { status: 'live' },
+        })
+        console.log(`[cricket-sync] syncLiveMatches — transitioned match ${cricbuzzId} to live`)
+      }
+    }
+
     const liveMatches = await prisma.match.findMany({
       where: { status: 'live', cricbuzzId: { not: null } },
       select: { id: true, cricbuzzId: true },
