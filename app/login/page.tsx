@@ -45,6 +45,8 @@ export default function LoginPage() {
 
       if (data.user.role === 'ADMIN') {
         router.push('/admin')
+      } else if (data.user.role === 'FRIEND') {
+        router.push('/friend/dashboard')
       } else {
         router.push('/dashboard')
       }
