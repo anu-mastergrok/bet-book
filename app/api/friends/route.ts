@@ -19,30 +19,43 @@ export async function GET(request: NextRequest) {
       orderBy: { createdAt: 'desc' },
     })
 
-    // For each friend compute outstanding balance from bets
-    const friendsWithBalance = await Promise.all(
-      links.map(async (link) => {
-        const bets = await prisma.betEntry.findMany({
-          where: { userId: user.userId, clientUserId: link.friendId },
-          select: { profitLoss: true, settlementStatus: true },
+    // Get all friend IDs
+    const friendIds = links.map(l => l.friendId)
+
+    // Batch fetch bets for all friends in one query
+    const allBets = friendIds.length > 0
+      ? await prisma.betEntry.findMany({
+          where: { userId: user.userId, clientUserId: { in: friendIds } },
+          select: { clientUserId: true, profitLoss: true },
         })
+      : []
 
-        const payments = await prisma.clientPayment.findMany({
-          where: { userId: user.userId, clientUserId: link.friendId },
-          select: { amount: true },
+    // Batch fetch payments for all friends in one query
+    const allPayments = friendIds.length > 0
+      ? await prisma.clientPayment.findMany({
+          where: { userId: user.userId, clientUserId: { in: friendIds } },
+          select: { clientUserId: true, amount: true },
         })
+      : []
 
-        const betPnl = bets.reduce((sum, b) => sum + Number(b.profitLoss), 0)
-        const paymentsReceived = payments.reduce((sum, p) => sum + Number(p.amount), 0)
-        const outstanding = betPnl - paymentsReceived
+    // Aggregate in memory
+    const betPnlByFriend = new Map<string, number>()
+    const paymentsByFriend = new Map<string, number>()
 
-        return {
-          linkId: link.id,
-          friend: link.friend,
-          outstanding,
-        }
-      })
-    )
+    for (const bet of allBets) {
+      if (!bet.clientUserId) continue
+      betPnlByFriend.set(bet.clientUserId, (betPnlByFriend.get(bet.clientUserId) ?? 0) + Number(bet.profitLoss))
+    }
+    for (const payment of allPayments) {
+      if (!payment.clientUserId) continue
+      paymentsByFriend.set(payment.clientUserId, (paymentsByFriend.get(payment.clientUserId) ?? 0) + Number(payment.amount))
+    }
+
+    const friendsWithBalance = links.map((link) => ({
+      linkId: link.id,
+      friend: link.friend,
+      outstanding: (betPnlByFriend.get(link.friendId) ?? 0) - (paymentsByFriend.get(link.friendId) ?? 0),
+    }))
 
     return jsonResponse({ friends: friendsWithBalance })
   } catch (error) {
