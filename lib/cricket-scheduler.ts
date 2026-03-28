@@ -7,19 +7,31 @@ export function startCricketSync(): void {
     return
   }
 
-  cron.schedule('0 6 * * *', () => {
+  cron.schedule('0 6 * * *', async () => {
     console.log('[cricket-scheduler] Running daily series sync')
-    syncSeries()
+    try {
+      await syncSeries()
+    } catch (err) {
+      console.error('[cricket-scheduler] Series sync failed:', err)
+    }
   })
 
-  cron.schedule('0 */2 * * *', () => {
+  cron.schedule('0 */2 * * *', async () => {
     console.log('[cricket-scheduler] Running upcoming matches sync')
-    syncUpcomingMatches()
+    try {
+      await syncUpcomingMatches()
+    } catch (err) {
+      console.error('[cricket-scheduler] Upcoming sync failed:', err)
+    }
   })
 
-  cron.schedule('*/5 * * * *', () => {
+  cron.schedule('*/5 * * * *', async () => {
     console.log('[cricket-scheduler] Running live match score sync')
-    syncLiveMatches()
+    try {
+      await syncLiveMatches()
+    } catch (err) {
+      console.error('[cricket-scheduler] Live sync failed:', err)
+    }
   })
 
   console.log('[cricket-scheduler] Cricket sync jobs registered')
