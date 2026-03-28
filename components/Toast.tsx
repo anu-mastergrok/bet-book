@@ -56,21 +56,18 @@ function Toast({ message, type, duration = 3000, onClose }: ToastProps) {
 
   return (
     <div
-      className={`alert ${alertClass[type]} shadow-lg min-w-72 max-w-sm overflow-hidden p-0`}
+      className={`alert ${alertClass[type]} shadow-lg min-w-72 max-w-sm overflow-hidden relative`}
       role="alert"
-      aria-live="polite"
     >
-      <div className="flex items-start gap-3 px-4 py-3 w-full">
-        <span className="flex-1 text-sm leading-snug">{message}</span>
-        <button
-          onClick={() => { setVisible(false); onClose?.() }}
-          className="btn btn-ghost btn-xs btn-circle shrink-0 -mr-1 -mt-0.5"
-          aria-label="Dismiss"
-        >
-          <X size={14} />
-        </button>
-      </div>
-      <div className="h-0.5 w-full bg-black/10">
+      <span className="flex-1 text-sm leading-snug">{message}</span>
+      <button
+        onClick={() => { setVisible(false); onClose?.() }}
+        className="btn btn-ghost btn-xs btn-circle shrink-0 -mr-1 -mt-0.5"
+        aria-label="Dismiss"
+      >
+        <X size={14} />
+      </button>
+      <div className="absolute bottom-0 left-0 h-0.5 w-full bg-black/10">
         <div className="h-full bg-black/20 transition-all duration-100" style={{ width: `${progress}%` }} />
       </div>
     </div>
