@@ -31,6 +31,13 @@ export async function PATCH(
       throw new NotFoundError('Friend account not found')
     }
 
+    const link = await prisma.friendLink.findFirst({
+      where: { userId: user.userId, friendId: parsed.data.clientUserId },
+    })
+    if (!link) {
+      throw new AuthorizationError('You must link this friend before assigning bets to them')
+    }
+
     const updatedBet = await prisma.betEntry.update({
       where: { id: params.id },
       data: { clientUserId: parsed.data.clientUserId },

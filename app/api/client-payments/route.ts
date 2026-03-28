@@ -67,11 +67,14 @@ export async function POST(request: NextRequest) {
       betWhere.clientName = clientName
     }
 
-    const pendingBets = await prisma.betEntry.findMany({
+    const pendingBetsRaw = await prisma.betEntry.findMany({
       where: betWhere,
       orderBy: { createdAt: 'asc' },
       include: { match: true },
     })
+
+    // Skip bets with zero P&L (result still pending — nothing to settle)
+    const pendingBets = pendingBetsRaw.filter(bet => Number(bet.profitLoss) !== 0)
 
     // Determine which bets to settle within the payment amount
     let remaining = amount
@@ -79,8 +82,10 @@ export async function POST(request: NextRequest) {
 
     for (const bet of pendingBets) {
       if (remaining <= 0) break
+      const betPnl = Math.abs(Number(bet.profitLoss))
+      if (betPnl > remaining) break  // stop if we can't cover this bet
       betsToSettle.push(bet)
-      remaining -= Math.abs(Number(bet.profitLoss))
+      remaining -= betPnl
     }
 
     // Settle all at once in a single transaction

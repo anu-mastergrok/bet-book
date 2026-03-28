@@ -32,6 +32,9 @@ export async function GET(
     if (user.role === 'USER' && bet.userId !== user.userId) {
       throw new AuthorizationError('You can only view your own bets')
     }
+    if (user.role === 'FRIEND' && bet.clientUserId !== user.userId) {
+      throw new AuthorizationError('You can only view your own bets')
+    }
 
     return jsonResponse({ bet })
   } catch (error) {
@@ -58,6 +61,9 @@ export async function PUT(
     }
 
     // Check authorization
+    if (user.role === 'FRIEND') {
+      throw new AuthorizationError('Friends cannot modify bets')
+    }
     if (user.role === 'USER' && existingBet.userId !== user.userId) {
       throw new AuthorizationError('You can only update your own bets')
     }
@@ -139,6 +145,9 @@ export async function DELETE(
     }
 
     // Check authorization
+    if (user.role === 'FRIEND') {
+      throw new AuthorizationError('Friends cannot modify bets')
+    }
     if (user.role === 'USER' && bet.userId !== user.userId) {
       throw new AuthorizationError('You can only delete your own bets')
     }

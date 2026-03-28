@@ -16,7 +16,11 @@ export async function GET(
         matches: {
           include: {
             betEntries: {
-              where: user.role === 'USER' ? { userId: user.userId } : undefined,
+              where: user.role === 'USER'
+                ? { userId: user.userId }
+                : user.role === 'FRIEND'
+                ? { clientUserId: user.userId }
+                : undefined,
               include: { clientUser: { select: { id: true, name: true } } },
             },
           },
