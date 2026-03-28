@@ -1,0 +1,111 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  name      String
+  phone     String   @unique
+  password  String
+  email     String?  @unique
+  role      Role     @default(USER)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  betEntries  BetEntry[] @relation("UserBetEntries")
+  clientBets  BetEntry[] @relation("ClientBets")
+
+  @@index([phone])
+  @@index([role])
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum SettlementStatus {
+  pending
+  collected
+  settled
+  lost_in_another_match
+}
+
+enum BetResult {
+  win
+  loss
+  pending
+}
+
+model Series {
+  id        String   @id @default(cuid())
+  name      String
+  startDate DateTime
+  endDate   DateTime
+  status    String   @default("active") // active, completed
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  matches Match[]
+
+  @@index([status])
+}
+
+model Match {
+  id        String   @id @default(cuid())
+  seriesId  String
+  teamA     String
+  teamB     String
+  matchDate DateTime
+  venue     String
+  status    String   @default("upcoming") // upcoming, live, completed
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  series    Series   @relation(fields: [seriesId], references: [id], onDelete: Cascade)
+  betEntries BetEntry[] @relation("MatchBets")
+  linkedBets BetEntry[] @relation("LinkedMatches")
+
+  @@index([seriesId])
+  @@index([status])
+}
+
+model BetEntry {
+  id                String   @id @default(cuid())
+  matchId           String
+  userId            String   // The person whose book this is
+  clientName        String
+  clientUserId      String?  // FK to User if they're registered
+  betOnTeam         String   // teamA or teamB
+  betAmount         Decimal  @db.Decimal(10, 2)
+  odds              Decimal  @db.Decimal(5, 2)
+  betType           String   // e.g., "match winner", "over/under"
+  result            BetResult @default(pending)
+  profitLoss        Decimal  @db.Decimal(10, 2) @default(0)
+  settlementStatus  SettlementStatus @default(pending)
+  linkedMatchId     String?  // FK to Match if settlement = lost_in_another_match
+  notes             String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  match         Match  @relation("MatchBets", fields: [matchId], references: [id], onDelete: Cascade)
+  user          User   @relation("UserBetEntries", fields: [userId], references: [id], onDelete: Cascade)
+  clientUser    User?  @relation("ClientBets", fields: [clientUserId], references: [id], onDelete: SetNull)
+  linkedMatch   Match? @relation("LinkedMatches", fields: [linkedMatchId], references: [id], onDelete: SetNull)
+
+  @@index([matchId])
+  @@index([userId])
+  @@index([clientUserId])
+  @@index([linkedMatchId])
+  @@index([settlementStatus])
+  @@index([result])
+}
