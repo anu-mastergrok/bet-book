@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import './globals.css'
 import { AuthProvider } from '@/context/AuthContext'
 import { GoogleProvider } from '@/components/GoogleProvider'
+import { ThemeProvider } from '@/components/ThemeProvider'
 
 export const metadata: Metadata = {
   title: 'Bet Book Platform',
@@ -14,13 +15,15 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning data-theme="night">
       <body>
-        <GoogleProvider>
-          <AuthProvider>
-            {children}
-          </AuthProvider>
-        </GoogleProvider>
+        <ThemeProvider>
+          <GoogleProvider>
+            <AuthProvider>
+              {children}
+            </AuthProvider>
+          </GoogleProvider>
+        </ThemeProvider>
       </body>
     </html>
   )
