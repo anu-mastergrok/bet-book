@@ -307,18 +307,116 @@ export function formatINR(amount: number, short = false): string
 
 ---
 
+---
+
+## 8. Admin — Edit & Delete Series and Matches
+
+Currently admin can only **create** series and matches. Full CRUD is required.
+
+### New API routes
+
+**`app/api/series/[id]/route.ts`**
+- `PUT` — update name, startDate, endDate, status (ADMIN only)
+- `DELETE` — delete series + cascade to matches (ADMIN only)
+
+**`app/api/matches/[id]/route.ts`**
+- `PUT` — update teamA, teamB, matchDate, venue, status, matchType (ADMIN only)
+- `DELETE` — delete match + cascade to betEntries (ADMIN only)
+
+### UI changes (Admin Dashboard)
+
+Each series card gets two action buttons: **Edit** (pencil) and **Delete** (trash):
+- Edit opens a pre-filled modal identical to Create but with existing values
+- Delete shows ConfirmModal: *"Delete this series? All matches and bets under it will be permanently deleted."*
+
+Each match row inside a series gets **Edit** and **Delete** buttons:
+- Edit opens a pre-filled match modal
+- Delete shows ConfirmModal: *"Delete this match? All bets under it will be permanently deleted."*
+
+---
+
+## 9. Manual Client Dues Tracking
+
+Auto-calculated dues (from bet P&L) only show what's owed on paper. Bookmakers also need to record **actual cash/UPI payments** received or made outside of individual bet settlements.
+
+### New DB model
+
+```prisma
+model ClientPayment {
+  id          String   @id @default(cuid())
+  userId      String
+  clientName  String
+  amount      Decimal  @db.Decimal(10, 2)  // positive = received from client, negative = paid to client
+  method      String   @default("cash")    // upi | cash
+  upiRef      String?
+  note        String?
+  createdAt   DateTime @default(now())
+
+  user  User  @relation("UserClientPayments", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([clientName])
+}
+```
+
+Add to `User` model: `clientPayments ClientPayment[] @relation("UserClientPayments")`
+
+### New API routes
+
+- `GET /api/client-payments?clientName=Raj+Kumar` — list payments for a client (authenticated user's own)
+- `POST /api/client-payments` — record a payment
+- `DELETE /api/client-payments/[id]` — delete a payment record
+
+### UI changes (Client Dues page)
+
+Each client card gets a **"Record Payment"** button. Opens a modal:
+
+```
+Amount Received (₹) *       Payment Method *
+[ 5000_______________ ]     [ Cash ]  [ UPI ]
+
+(if UPI)
+UPI Reference
+[ T2506271234567______ ]
+
+Note (optional)
+[ e.g. Partial payment __ ]
+
+           [ Cancel ]  [ Record Payment ]
+```
+
+- Positive amount = client paid you → reduces outstanding
+- Client card shows two balance lines:
+  ```
+  Bet P&L:        +₹15,000
+  Payments Rcvd:  -₹5,000
+  ─────────────────────────
+  Net Outstanding: +₹10,000
+  ```
+- Payment history expandable per client (list of past payments with delete button)
+
+---
+
 ## Implementation Order
 
 1. `lib/format.ts` — formatINR utility (no dependencies)
-2. DB schema push — matchType + payment fields
-3. Update API — settlement route accepts payment fields
-4. `formatINR` rollout — replace raw ₹ values across all pages
-5. Quick amount presets + cricket bet types — New Bet form
-6. Match type field — Admin Add Match modal + badge display
-7. UPI settlement fields — Edit Bet modal
-8. WhatsApp share — utility function + buttons in tables
-9. Client Dues page — `/dashboard/clients`
-10. Mobile bottom navigation — shared component + integrate into all pages
+2. DB schema push — matchType + UPI payment fields + ClientPayment model
+3. Update validators — matchType, UPI fields, ClientPayment schema
+4. API: settlement route accepts UPI payment fields
+5. API: `app/api/series/[id]/route.ts` — PUT + DELETE
+6. API: `app/api/matches/[id]/route.ts` — PUT + DELETE
+7. API: `app/api/client-payments/route.ts` — GET + POST
+8. API: `app/api/client-payments/[id]/route.ts` — DELETE
+9. `lib/whatsapp.ts` — message builder utility
+10. `formatINR` rollout — replace raw ₹ values across all pages
+11. Quick amount presets + cricket bet types — New Bet form
+12. Match type + edit/delete — Admin series/matches panel
+13. UPI settlement fields — Edit Bet modal + UPI chips in table
+14. WhatsApp share buttons — dashboard + admin bets table
+15. `app/dashboard/clients/page.tsx` — Client Dues + manual payments
+16. `app/dashboard/history/page.tsx` — History page with filters
+17. `components/BottomNav.tsx` — mobile bottom navigation component
+18. Integrate BottomNav into all pages
 
 ---
 
