@@ -1,0 +1,36 @@
+prisma/schema.prisma
+  4f25135491fb4413 24-26,71,99-101,117-132
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.20",
+  "base_commit_sha": "b4b33feabef91a60df573f760306e43a7505cb15",
+  "prompts": {
+    "499ac1399e3e57a4": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "15acdd98-6ebf-4422-8c63-49756b6d4258",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "S Kumar <skumar@ascend-marketing.com>",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 107,
+      "overriden_lines": 0
+    },
+    "4f25135491fb4413": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "07a7d936-2d2e-472f-b194-4f5b28b9aaf4",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "S Kumar <skumar@ascend-marketing.com>",
+      "messages": [],
+      "total_additions": 23,
+      "total_deletions": 2,
+      "accepted_lines": 23,
+      "overriden_lines": 0
+    }
+  }
+}
