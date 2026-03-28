@@ -4,18 +4,22 @@ import {
   fetchDomesticSeries,
   fetchUpcomingMatches,
   fetchRecentMatches,
-  fetchLiveMatches,
   fetchMatchScore,
   CricbuzzMatchInfo,
 } from '@/lib/cricbuzz-client'
 
 // --- Helpers ---
 
-function mapMatchFormat(format: string, seriesName: string): string {
-  const f = (format ?? '').toUpperCase()
+function parseMatchType(matchDesc: string, matchFormat: string, seriesName: string): string {
+  if ((seriesName ?? '').toLowerCase().includes('ipl')) return 'IPL'
+  const d = (matchDesc ?? '').toLowerCase()
+  if (d.includes('t20i') || d.includes('t20')) return 'T20'
+  if (d.includes('odi')) return 'ODI'
+  if (d.includes('test')) return 'Test'
+  // Fall back to matchFormat
+  const f = (matchFormat ?? '').toUpperCase()
   if (f === 'TEST') return 'Test'
   if (f === 'ODI') return 'ODI'
-  if ((seriesName ?? '').toLowerCase().includes('ipl')) return 'IPL'
   if (f === 'T20' || f === 'T20I') return 'T20'
   return 'T20'
 }
@@ -63,7 +67,7 @@ async function upsertMatch(info: CricbuzzMatchInfo): Promise<void> {
   const cricbuzzMatchId = String(info.matchId)
   const cricbuzzSeriesId = String(info.seriesId)
   const status = mapState(info.state)
-  const matchType = mapMatchFormat(info.matchFormat, info.seriesName)
+  const matchType = parseMatchType(info.matchDesc, info.matchFormat, info.seriesName)
   const matchDate = new Date(Number(info.startDate))
   const venue = info.venueInfo?.ground ?? info.venueInfo?.city ?? 'TBC'
 
@@ -88,8 +92,6 @@ async function upsertMatch(info: CricbuzzMatchInfo): Promise<void> {
       status,
       matchDate,
       venue,
-      teamA: info.team1.teamName,
-      teamB: info.team2.teamName,
     },
   })
 }
@@ -115,34 +117,39 @@ export async function syncUpcomingMatches(): Promise<void> {
 }
 
 export async function syncLiveMatches(): Promise<void> {
-  const liveMatches = await prisma.match.findMany({
-    where: { status: 'live', cricbuzzId: { not: null } },
-    select: { id: true, cricbuzzId: true },
-  })
+  console.log('[cricket-sync] syncLiveMatches start')
+  try {
+    const liveMatches = await prisma.match.findMany({
+      where: { status: 'live', cricbuzzId: { not: null } },
+      select: { id: true, cricbuzzId: true },
+    })
 
-  if (liveMatches.length === 0) return
+    if (liveMatches.length === 0) return
 
-  console.log(`[cricket-sync] syncLiveMatches — ${liveMatches.length} live matches`)
+    console.log(`[cricket-sync] syncLiveMatches — ${liveMatches.length} live matches`)
 
-  for (const match of liveMatches) {
-    try {
-      const score = await fetchMatchScore(Number(match.cricbuzzId))
-      const state = mapState(score.matchHeader.state)
-      const innings = score.miniscore?.matchScoreDetails?.inningsScoreList ?? []
-      const latestInnings = innings[innings.length - 1]
-      const liveScore = latestInnings ? buildLiveScore(latestInnings) : null
+    for (const match of liveMatches) {
+      try {
+        const score = await fetchMatchScore(Number(match.cricbuzzId))
+        const state = mapState(score.matchHeader.state)
+        const innings = score.miniscore?.matchScoreDetails?.inningsScoreList ?? []
+        const latestInnings = innings[innings.length - 1]
+        const liveScore = latestInnings ? buildLiveScore(latestInnings) : null
 
-      await prisma.match.update({
-        where: { id: match.id },
-        data: {
-          status: state,
-          liveScore: state === 'live' ? liveScore : null,
-          result: state === 'completed' ? score.matchHeader.status : null,
-        },
-      })
-    } catch (err) {
-      console.error(`[cricket-sync] syncLiveMatches error for match ${match.id}:`, err)
+        await prisma.match.update({
+          where: { id: match.id },
+          data: {
+            status: state,
+            liveScore: state === 'live' ? liveScore : null,
+            result: state === 'completed' ? score.matchHeader.status : null,
+          },
+        })
+      } catch (err) {
+        console.error(`[cricket-sync] syncLiveMatches error for match ${match.id}:`, err)
+      }
     }
+  } catch (err) {
+    console.error('[cricket-sync] syncLiveMatches error:', err)
   }
 }
 
