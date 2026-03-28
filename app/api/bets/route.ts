@@ -4,6 +4,7 @@ import { betEntrySchema } from '@/lib/validators'
 import { errorResponse, jsonResponse, authenticateRequest, requireRole } from '@/lib/middleware'
 import { handleError, ValidationError, NotFoundError, AuthorizationError } from '@/lib/errors'
 import { calculateBetProfitLoss } from '@/lib/pnl'
+import { createNotification } from '@/lib/notifications'
 
 export async function GET(request: NextRequest) {
   try {
@@ -17,7 +18,10 @@ export async function GET(request: NextRequest) {
 
     const where: any = {}
 
-    if (user.role === 'USER') {
+    if (user.role === 'FRIEND') {
+      // Friends see only bets where they are the client
+      where.clientUserId = user.userId
+    } else if (user.role === 'USER') {
       // Users can only see their own bets
       where.userId = user.userId
     } else if (user.role === 'ADMIN') {
@@ -94,32 +98,38 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    // Calculate profit/loss after bet is created
+    // Calculate profit/loss
     const profitLoss = calculateBetProfitLoss(bet as any)
 
+    let finalBet = bet
     if (profitLoss !== 0) {
-      const updatedBet = await prisma.betEntry.update({
+      finalBet = await prisma.betEntry.update({
         where: { id: bet.id },
         data: { profitLoss: profitLoss.toString() },
         include: {
-          match: {
-            include: { series: true },
-          },
+          match: { include: { series: true } },
           user: true,
           clientUser: true,
         },
       })
-
-      return jsonResponse({
-        message: 'Bet created successfully',
-        bet: updatedBet,
-      }, 201)
     }
 
-    return jsonResponse({
-      message: 'Bet created successfully',
-      bet,
-    }, 201)
+    // Notify friend if linked (non-critical — failure must not affect the response)
+    if (finalBet.clientUserId) {
+      const matchLabel = `${finalBet.match.teamA} vs ${finalBet.match.teamB}`
+      try {
+        await createNotification(
+          finalBet.clientUserId,
+          'New bet added',
+          `${matchLabel} — ₹${Number(finalBet.betAmount).toLocaleString('en-IN')}`,
+          `/friend/bets`
+        )
+      } catch {
+        // Non-critical — notification failure should not fail bet creation
+      }
+    }
+
+    return jsonResponse({ message: 'Bet created successfully', bet: finalBet }, 201)
   } catch (error) {
     const { statusCode, message } = handleError(error)
     return errorResponse(message, statusCode)
