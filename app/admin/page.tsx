@@ -98,6 +98,7 @@ export default function AdminPage() {
   const [isDeleteMatchModalOpen, setIsDeleteMatchModalOpen] = useState(false)
   const [importedMatches, setImportedMatches] = useState<ImportedMatch[]>([])
   const [isSyncing, setIsSyncing] = useState(false)
+  const [activatingId, setActivatingId] = useState<string | null>(null)
 
   useEffect(() => {
     if (!user || user.role !== 'ADMIN') { router.push('/login'); return }
@@ -121,6 +122,8 @@ export default function AdminPage() {
       if (matchesRes.ok) {
         const { matches } = await matchesRes.json()
         setImportedMatches(matches)
+      } else {
+        toast.error('Failed to load imported matches')
       }
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Failed to load data')
@@ -278,6 +281,7 @@ export default function AdminPage() {
   }
 
   const handleActivateMatch = async (matchId: string) => {
+    setActivatingId(matchId)
     try {
       const res = await fetch(`/api/matches/${matchId}/activate`, {
         method: 'PATCH',
@@ -286,9 +290,10 @@ export default function AdminPage() {
       if (!res.ok) throw new Error('Failed to activate')
       toast.success('Match activated')
       setImportedMatches(prev => prev.filter(m => m.id !== matchId))
-      fetchData()
     } catch {
       toast.error('Failed to activate match')
+    } finally {
+      setActivatingId(null)
     }
   }
 
@@ -525,9 +530,10 @@ export default function AdminPage() {
                   </div>
                   <button
                     onClick={() => handleActivateMatch(match.id)}
+                    disabled={activatingId === match.id}
                     className="btn-primary text-xs px-3 py-1.5 shrink-0"
                   >
-                    Activate
+                    {activatingId === match.id ? <Loader className="animate-spin" size={12} /> : 'Activate'}
                   </button>
                 </div>
               ))}
