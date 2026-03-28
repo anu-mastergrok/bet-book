@@ -9,7 +9,7 @@ export const registerSchema = z.object({
 })
 
 export const loginSchema = z.object({
-  phone: z.string().regex(/^\d{10}$/, 'Phone must be 10 digits'),
+  identifier: z.string().min(1, 'Phone or email is required'),
   password: z.string().min(1, 'Password is required'),
 })
 
@@ -100,6 +100,20 @@ export const markNotificationsReadSchema = z.object({
   ids: z.array(z.string()).optional(),
 })
 
+// Auth enhancement schemas
+export const verifyEmailSchema = z.object({
+  email: z.string().email('Invalid email address'),
+  otp: z.string().length(6, 'Code must be 6 digits').regex(/^\d{6}$/, 'Code must be digits only'),
+})
+
+export const resendVerificationSchema = z.object({
+  email: z.string().email('Invalid email address'),
+})
+
+export const googleAuthSchema = z.object({
+  idToken: z.string().min(1, 'ID token is required'),
+})
+
 export type RegisterInput = z.infer<typeof registerSchema>
 export type LoginInput = z.infer<typeof loginSchema>
 export type SeriesInput = z.infer<typeof seriesSchema>
@@ -113,3 +127,6 @@ export type AssignFriendInput = z.infer<typeof assignFriendSchema>
 export type DisputeInput = z.infer<typeof disputeSchema>
 export type ResolveDisputeInput = z.infer<typeof resolveDisputeSchema>
 export type MarkNotificationsReadInput = z.infer<typeof markNotificationsReadSchema>
+export type VerifyEmailInput = z.infer<typeof verifyEmailSchema>
+export type ResendVerificationInput = z.infer<typeof resendVerificationSchema>
+export type GoogleAuthInput = z.infer<typeof googleAuthSchema>

@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import './globals.css'
 import { AuthProvider } from '@/context/AuthContext'
+import { GoogleProvider } from '@/components/GoogleProvider'
 
 export const metadata: Metadata = {
   title: 'Bet Book Platform',
@@ -15,9 +16,11 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body>
-        <AuthProvider>
-          {children}
-        </AuthProvider>
+        <GoogleProvider>
+          <AuthProvider>
+            {children}
+          </AuthProvider>
+        </GoogleProvider>
       </body>
     </html>
   )
