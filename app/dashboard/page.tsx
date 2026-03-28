@@ -30,7 +30,7 @@ interface Bet {
     teamB: string
     status: string
     matchDate: string
-    series: { name: string }
+    series: { id: string; name: string }
   }
 }
 
@@ -316,7 +316,11 @@ export default function DashboardPage() {
                 <tbody>
                   {bets.map(bet => (
                     <tr key={bet.id}>
-                      <td className="text-slate-400">{bet.match.series.name}</td>
+                      <td className="text-slate-400">
+                        <Link href={`/dashboard/series/${bet.match.series.id}`} className="hover:text-amber-400 underline-offset-2 hover:underline">
+                          {bet.match.series.name}
+                        </Link>
+                      </td>
                       <td>
                         <div className="font-medium">{bet.match.teamA} vs {bet.match.teamB}</div>
                         <div className="text-xs text-slate-500 capitalize">{bet.match.status}</div>
