@@ -1,0 +1,27 @@
+components/NotificationBell.tsx
+  23f9709f12aec394 1-35
+app/friend/layout.tsx
+  23f9709f12aec394 9,35-43
+app/friend/notifications/page.tsx
+  23f9709f12aec394 1-74
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.20",
+  "base_commit_sha": "c7ba7aa04996326d3d0bb5262d234dd5e00b6e4e",
+  "prompts": {
+    "23f9709f12aec394": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "3b02e19c-0535-43b5-aa66-01f66669d9e1",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "S Kumar <skumar@ascend-marketing.com>",
+      "messages": [],
+      "total_additions": 119,
+      "total_deletions": 6,
+      "accepted_lines": 119,
+      "overriden_lines": 0
+    }
+  }
+}
