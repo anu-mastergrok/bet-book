@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/context/AuthContext'
 import { useToast, ToastContainer } from '@/components/Toast'
@@ -40,36 +40,43 @@ interface Bet {
 interface PnLData { series: string; pnl: number }
 
 function useDaisyUIColors() {
-  const [colors, setColors] = useState({
-    primary: '#570df8',
-    success: '#00a96e',
-    error: '#ff5861',
-    warning: '#ffbe00',
-    baseContent: '#d1d5db',
-    base200: '#1d232a',
-    base300: '#191e24',
-  })
-  useEffect(() => {
-    const root = document.documentElement
-    const style = getComputedStyle(root)
+  const { theme } = useTheme()
+  return useMemo(() => {
+    if (typeof window === 'undefined') {
+      return {
+        primary: 'oklch(0.491 0.27 292.581)',
+        success: 'oklch(0.696 0.17 162.48)',
+        error: 'oklch(0.637 0.237 25.331)',
+        warning: 'oklch(0.828 0.189 84.429)',
+        baseContent: 'oklch(0.842 0.022 252.894)',
+        base200: 'oklch(0.2 0.019 252.042)',
+        base300: 'oklch(0.174 0.014 254.623)',
+      }
+    }
+    const style = getComputedStyle(document.documentElement)
     const resolve = (v: string) => {
       const val = style.getPropertyValue(v).trim()
       return val ? `oklch(${val})` : undefined
     }
-    setColors(prev => ({
-      primary: resolve('--p') ?? prev.primary,
-      success: resolve('--su') ?? prev.success,
-      error: resolve('--er') ?? prev.error,
-      warning: resolve('--wa') ?? prev.warning,
-      baseContent: resolve('--bc') ?? prev.baseContent,
-      base200: resolve('--b2') ?? prev.base200,
-      base300: resolve('--b3') ?? prev.base300,
-    }))
-  }, [])
-  return colors
+    return {
+      primary: resolve('--p') ?? 'oklch(0.491 0.27 292.581)',
+      success: resolve('--su') ?? 'oklch(0.696 0.17 162.48)',
+      error: resolve('--er') ?? 'oklch(0.637 0.237 25.331)',
+      warning: resolve('--wa') ?? 'oklch(0.828 0.189 84.429)',
+      baseContent: resolve('--bc') ?? 'oklch(0.842 0.022 252.894)',
+      base200: resolve('--b2') ?? 'oklch(0.2 0.019 252.042)',
+      base300: resolve('--b3') ?? 'oklch(0.174 0.014 254.623)',
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [theme])
 }
 
-const CustomTooltip = ({ active, payload, label }: any) => {
+interface TooltipPayload {
+  value: number
+  name?: string
+}
+
+const CustomTooltip = ({ active, payload, label }: { active?: boolean; payload?: TooltipPayload[]; label?: string }) => {
   if (active && payload && payload.length) {
     const val = payload[0].value
     return (
@@ -98,37 +105,39 @@ export default function DashboardPage() {
   useEffect(() => {
     if (!user) { router.push('/login'); return }
     if (user.role === 'ADMIN') { router.push('/admin'); return }
-    fetchData()
-  }, [user, router])
+    if (!accessToken) return
 
-  const fetchData = async () => {
-    try {
-      const response = await fetch('/api/bets', {
-        headers: { Authorization: `Bearer ${accessToken}` },
-      })
-      if (!response.ok) throw new Error('Failed to fetch bets')
+    async function loadData() {
+      try {
+        const response = await fetch('/api/bets', {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        })
+        if (!response.ok) throw new Error('Failed to fetch bets')
 
-      const { bets } = await response.json()
-      setBets(bets)
+        const { bets } = await response.json()
+        setBets(bets)
 
-      const seriesPnL: { [k: string]: number } = {}
-      let total = 0
-      bets.forEach((bet: Bet) => {
-        seriesPnL[bet.match.series.name] = (seriesPnL[bet.match.series.name] || 0) + bet.profitLoss
-        total += bet.profitLoss
-      })
+        const seriesPnL: { [k: string]: number } = {}
+        let total = 0
+        bets.forEach((bet: Bet) => {
+          seriesPnL[bet.match.series.name] = (seriesPnL[bet.match.series.name] || 0) + bet.profitLoss
+          total += bet.profitLoss
+        })
 
-      setPnlData(Object.entries(seriesPnL).map(([series, pnl]) => ({
-        series,
-        pnl: Math.round(pnl * 100) / 100,
-      })))
-      setTotalPnL(Math.round(total * 100) / 100)
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Failed to load data')
-    } finally {
-      setIsLoading(false)
+        setPnlData(Object.entries(seriesPnL).map(([series, pnl]) => ({
+          series,
+          pnl: Math.round(pnl * 100) / 100,
+        })))
+        setTotalPnL(Math.round(total * 100) / 100)
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : 'Failed to load data')
+      } finally {
+        setIsLoading(false)
+      }
     }
-  }
+
+    loadData()
+  }, [user, accessToken, router])
 
   const handleLogout = () => {
     logout()
