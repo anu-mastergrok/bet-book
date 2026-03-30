@@ -45,6 +45,7 @@ export default function FriendsPage() {
   useEffect(() => { loadFriends() }, [loadFriends])
 
   useEffect(() => {
+    if (!accessToken) return
     if (searchQuery.length < 2) { setSearchResults([]); return }
     const t = setTimeout(() => {
       fetch(`/api/friends/search?q=${encodeURIComponent(searchQuery)}`, {
@@ -121,35 +122,35 @@ export default function FriendsPage() {
   }
 
   return (
-    <div className="min-h-dvh bg-slate-950">
+    <div className="min-h-dvh bg-base-100 pb-20 sm:pb-0">
       <ToastContainer />
 
-      <header className="sticky top-0 z-10 bg-slate-900/80 backdrop-blur-md border-b border-slate-800 px-4 sm:px-6 py-3">
-        <h1 className="text-base font-semibold text-slate-100">Friends</h1>
+      <header className="sticky top-0 z-10 bg-base-200/80 backdrop-blur-md border-b border-base-300 px-4 sm:px-6 py-3">
+        <h1 className="text-base font-semibold text-base-content">Friends</h1>
       </header>
 
       <main className="max-w-2xl mx-auto px-4 py-6 space-y-6 pb-24">
 
         {/* Search */}
         <div className="relative">
-          <Search size={16} className="absolute left-3 top-3.5 text-slate-400" />
+          <Search size={16} className="absolute left-3 top-3.5 text-base-content/60" />
           <input
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
             placeholder="Search by name or phone..."
-            className="w-full bg-slate-800 text-white rounded-xl pl-9 pr-4 py-3 border border-slate-700 focus:outline-none focus:border-amber-400 text-sm"
+            className="input input-bordered w-full pl-9"
           />
           {searchResults.length > 0 && (
-            <div className="absolute top-full mt-1 left-0 right-0 bg-slate-800 border border-slate-700 rounded-xl overflow-hidden z-10">
+            <div className="absolute top-full mt-1 left-0 right-0 bg-base-200 border border-base-300 rounded-xl overflow-hidden z-10">
               {searchResults.map(u => (
-                <div key={u.id} className="flex items-center justify-between px-4 py-3 hover:bg-slate-700 border-b border-slate-700 last:border-0">
+                <div key={u.id} className="flex items-center justify-between px-4 py-3 hover:bg-base-300 border-b border-base-300 last:border-0">
                   <div>
-                    <p className="text-white text-sm font-medium">{u.name}</p>
-                    <p className="text-slate-400 text-xs">{u.phone}</p>
+                    <p className="text-base-content text-sm font-medium">{u.name}</p>
+                    <p className="text-base-content/60 text-xs">{u.phone}</p>
                   </div>
                   <button
                     onClick={() => handleLink(u.id)}
-                    className="flex items-center gap-1 text-xs bg-amber-500 hover:bg-amber-400 text-slate-900 font-semibold px-3 py-1.5 rounded-full"
+                    className="btn btn-primary btn-xs flex items-center gap-1"
                   >
                     <UserPlus size={12} />
                     Link
@@ -162,44 +163,48 @@ export default function FriendsPage() {
 
         {/* Friends list */}
         {isLoading ? (
-          <div className="text-center text-slate-400 py-10">Loading...</div>
+          <div className="flex justify-center py-10">
+            <span className="loading loading-spinner loading-lg text-primary" />
+          </div>
         ) : friends.length === 0 ? (
-          <div className="text-center text-slate-500 py-10">No friends linked yet. Search to add one.</div>
+          <div className="text-center text-base-content/40 py-10">No friends linked yet. Search to add one.</div>
         ) : (
           <div className="space-y-3">
             {friends.map(f => (
-              <div key={f.linkId} className="bg-slate-900 rounded-xl p-4 border border-slate-800 space-y-3">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <p className="font-semibold text-white">{f.friend.name}</p>
-                    <p className="text-xs text-slate-400">{f.friend.phone}</p>
+              <div key={f.linkId} className="card bg-base-200 shadow-sm">
+                <div className="card-body p-4 space-y-3">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <p className="font-semibold text-base-content">{f.friend.name}</p>
+                      <p className="text-xs text-base-content/60">{f.friend.phone}</p>
+                    </div>
+                    <div className={`text-lg font-bold ${f.outstanding > 0 ? 'text-success' : f.outstanding < 0 ? 'text-error' : 'text-base-content/60'}`}>
+                      {f.outstanding > 0 ? '+' : ''}{formatINR(f.outstanding)}
+                    </div>
                   </div>
-                  <div className={`text-lg font-bold ${f.outstanding > 0 ? 'text-emerald-400' : f.outstanding < 0 ? 'text-red-400' : 'text-slate-400'}`}>
-                    {f.outstanding > 0 ? '+' : ''}{formatINR(f.outstanding)}
+                  <div className="flex gap-2 flex-wrap">
+                    <button
+                      onClick={() => setPaymentModal(f)}
+                      className="btn btn-primary btn-xs flex items-center gap-1"
+                    >
+                      <IndianRupee size={12} />
+                      Record Payment
+                    </button>
+                    <button
+                      onClick={() => sendWhatsApp(f)}
+                      className="btn btn-success btn-xs flex items-center gap-1"
+                    >
+                      <MessageCircle size={12} />
+                      WhatsApp
+                    </button>
+                    <button
+                      onClick={() => handleUnlink(f.linkId)}
+                      className="btn btn-ghost btn-xs flex items-center gap-1"
+                    >
+                      <UserMinus size={12} />
+                      Unlink
+                    </button>
                   </div>
-                </div>
-                <div className="flex gap-2 flex-wrap">
-                  <button
-                    onClick={() => setPaymentModal(f)}
-                    className="flex items-center gap-1 text-xs bg-amber-600 hover:bg-amber-500 text-white px-3 py-1.5 rounded-full"
-                  >
-                    <IndianRupee size={12} />
-                    Record Payment
-                  </button>
-                  <button
-                    onClick={() => sendWhatsApp(f)}
-                    className="flex items-center gap-1 text-xs bg-green-800 hover:bg-green-700 text-green-200 px-3 py-1.5 rounded-full"
-                  >
-                    <MessageCircle size={12} />
-                    WhatsApp
-                  </button>
-                  <button
-                    onClick={() => handleUnlink(f.linkId)}
-                    className="flex items-center gap-1 text-xs bg-slate-800 hover:bg-slate-700 text-slate-400 px-3 py-1.5 rounded-full"
-                  >
-                    <UserMinus size={12} />
-                    Unlink
-                  </button>
                 </div>
               </div>
             ))}
@@ -209,71 +214,73 @@ export default function FriendsPage() {
         {/* Record Payment modal */}
         {paymentModal && (
           <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-            <div className="bg-slate-900 rounded-xl p-6 w-full max-w-md border border-slate-700 space-y-4">
-              <h2 className="text-white font-semibold text-lg">Record Payment — {paymentModal.friend.name}</h2>
+            <div className="card bg-base-200 shadow-sm w-full max-w-md">
+              <div className="card-body space-y-4">
+                <h2 className="text-base-content font-semibold text-lg">Record Payment — {paymentModal.friend.name}</h2>
 
-              <div>
-                <label className="text-slate-400 text-xs block mb-1">Amount Received (₹) *</label>
-                <input
-                  type="number"
-                  value={paymentForm.amount}
-                  onChange={e => setPaymentForm(p => ({ ...p, amount: e.target.value }))}
-                  placeholder="10000"
-                  className="w-full bg-slate-800 text-white rounded-lg px-3 py-2 border border-slate-700 focus:outline-none focus:border-amber-400 text-sm"
-                />
-              </div>
-
-              <div>
-                <label className="text-slate-400 text-xs block mb-1">Payment Method *</label>
-                <div className="flex gap-2">
-                  {(['cash', 'upi'] as const).map(m => (
-                    <button
-                      key={m}
-                      onClick={() => setPaymentForm(p => ({ ...p, method: m }))}
-                      className={`flex-1 py-2 rounded-lg text-sm font-medium capitalize border ${paymentForm.method === m ? 'bg-amber-500 text-slate-900 border-amber-500' : 'bg-slate-800 text-slate-300 border-slate-700'}`}
-                    >
-                      {m.toUpperCase()}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {paymentForm.method === 'upi' && (
                 <div>
-                  <label className="text-slate-400 text-xs block mb-1">UPI Reference</label>
+                  <label className="text-base-content/60 text-xs block mb-1">Amount Received (₹) *</label>
                   <input
-                    value={paymentForm.upiRef}
-                    onChange={e => setPaymentForm(p => ({ ...p, upiRef: e.target.value }))}
-                    placeholder="T2506271234567"
-                    className="w-full bg-slate-800 text-white rounded-lg px-3 py-2 border border-slate-700 focus:outline-none focus:border-amber-400 text-sm"
+                    type="number"
+                    value={paymentForm.amount}
+                    onChange={e => setPaymentForm(p => ({ ...p, amount: e.target.value }))}
+                    placeholder="10000"
+                    className="input input-bordered w-full"
                   />
                 </div>
-              )}
 
-              <div>
-                <label className="text-slate-400 text-xs block mb-1">Note (optional)</label>
-                <input
-                  value={paymentForm.note}
-                  onChange={e => setPaymentForm(p => ({ ...p, note: e.target.value }))}
-                  placeholder="e.g. Partial payment"
-                  className="w-full bg-slate-800 text-white rounded-lg px-3 py-2 border border-slate-700 focus:outline-none focus:border-amber-400 text-sm"
-                />
-              </div>
+                <div>
+                  <label className="text-base-content/60 text-xs block mb-1">Payment Method *</label>
+                  <div className="flex gap-2">
+                    {(['cash', 'upi'] as const).map(m => (
+                      <button
+                        key={m}
+                        onClick={() => setPaymentForm(p => ({ ...p, method: m }))}
+                        className={`flex-1 py-2 rounded-lg text-sm font-medium capitalize border ${paymentForm.method === m ? 'btn btn-primary' : 'btn btn-neutral'}`}
+                      >
+                        {m.toUpperCase()}
+                      </button>
+                    ))}
+                  </div>
+                </div>
 
-              <div className="flex gap-3 justify-end pt-2">
-                <button
-                  onClick={() => setPaymentModal(null)}
-                  className="text-slate-400 hover:text-white text-sm px-4 py-2"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleRecordPayment}
-                  disabled={!paymentForm.amount || parseFloat(paymentForm.amount) <= 0}
-                  className="bg-amber-500 hover:bg-amber-400 text-slate-900 font-semibold text-sm px-4 py-2 rounded-lg disabled:opacity-50"
-                >
-                  Record Payment
-                </button>
+                {paymentForm.method === 'upi' && (
+                  <div>
+                    <label className="text-base-content/60 text-xs block mb-1">UPI Reference</label>
+                    <input
+                      value={paymentForm.upiRef}
+                      onChange={e => setPaymentForm(p => ({ ...p, upiRef: e.target.value }))}
+                      placeholder="T2506271234567"
+                      className="input input-bordered w-full"
+                    />
+                  </div>
+                )}
+
+                <div>
+                  <label className="text-base-content/60 text-xs block mb-1">Note (optional)</label>
+                  <input
+                    value={paymentForm.note}
+                    onChange={e => setPaymentForm(p => ({ ...p, note: e.target.value }))}
+                    placeholder="e.g. Partial payment"
+                    className="input input-bordered w-full"
+                  />
+                </div>
+
+                <div className="flex gap-3 justify-end pt-2">
+                  <button
+                    onClick={() => setPaymentModal(null)}
+                    className="btn btn-ghost btn-sm"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleRecordPayment}
+                    disabled={!paymentForm.amount || parseFloat(paymentForm.amount) <= 0}
+                    className="btn btn-primary btn-sm disabled:opacity-50"
+                  >
+                    Record Payment
+                  </button>
+                </div>
               </div>
             </div>
           </div>
