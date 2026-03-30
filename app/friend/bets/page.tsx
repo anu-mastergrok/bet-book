@@ -59,11 +59,13 @@ export default function FriendBetsPage() {
   }, [loadBets])
 
   const handleConfirm = async (betId: string) => {
+    if (!accessToken) return
+    const token = accessToken
     setActionLoading(betId)
     try {
       const res = await fetch(`/api/bets/${betId}/confirm`, {
         method: 'PATCH',
-        headers: { Authorization: `Bearer ${accessToken}` },
+        headers: { Authorization: `Bearer ${token}` },
       })
       if (!res.ok) throw new Error((await res.json()).error)
       toast.success('Settlement confirmed')
@@ -76,12 +78,14 @@ export default function FriendBetsPage() {
   }
 
   const handleDispute = async () => {
+    if (!accessToken) return
     if (!disputeModal) return
+    const token = accessToken
     setActionLoading(disputeModal.betId)
     try {
       const res = await fetch(`/api/bets/${disputeModal.betId}/dispute`, {
         method: 'PATCH',
-        headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({ note: disputeNote }),
       })
       if (!res.ok) throw new Error((await res.json()).error)
@@ -184,7 +188,11 @@ export default function FriendBetsPage() {
           <div className="card bg-base-200 shadow-sm w-full max-w-md">
             <div className="card-body space-y-4">
               <h2 className="text-base-content font-semibold text-lg">Raise a Dispute</h2>
+              <label htmlFor="dispute-note" className="label">
+                <span className="label-text">Dispute Reason</span>
+              </label>
               <textarea
+                id="dispute-note"
                 value={disputeNote}
                 onChange={e => setDisputeNote(e.target.value)}
                 placeholder="Describe why you're disputing this bet..."
