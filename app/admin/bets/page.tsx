@@ -312,11 +312,7 @@ export default function AdminBetsPage() {
                               </div>
                             )}
                             {bet.paymentMethod && bet.paymentMethod !== 'pending' && (
-                              <span className={`inline-flex items-center gap-1 text-xs px-1.5 py-0.5 rounded font-medium ${
-                                bet.paymentMethod === 'upi'
-                                  ? 'badge badge-success badge-sm'
-                                  : 'badge badge-ghost badge-sm'
-                              }`}>
+                              <span className={bet.paymentMethod === 'upi' ? 'badge badge-success badge-sm' : 'badge badge-ghost badge-sm'}>
                                 {bet.paymentMethod === 'upi' ? 'UPI ✓' : 'Cash'}
                               </span>
                             )}
@@ -439,8 +435,10 @@ export default function AdminBetsPage() {
               <p className="text-xs font-medium text-base-content/60">Payment Details</p>
 
               {/* Payment Method */}
-              <div>
-                <label className="label"><span className="label-text">Payment Method</span></label>
+              <div role="group" aria-labelledby="payment-method-label">
+                <div className="label">
+                  <span id="payment-method-label" className="label-text">Payment Method</span>
+                </div>
                 <div className="flex gap-2">
                   {['upi', 'cash', 'pending'].map(m => (
                     <button
