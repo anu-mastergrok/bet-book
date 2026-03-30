@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useAuth } from '@/context/AuthContext'
 import { useToast, ToastContainer } from '@/components/Toast'
 import { Modal, ConfirmModal } from '@/components/Modal'
-import { LogOut, ArrowLeft, Edit2, Trash2, Loader, Link as LinkIcon, SlidersHorizontal, MessageCircle } from 'lucide-react'
+import { LogOut, ArrowLeft, Edit2, Trash2, Link as LinkIcon, SlidersHorizontal, MessageCircle } from 'lucide-react'
 import Link from 'next/link'
 import { formatINR } from '@/lib/format'
 import { buildBetSlipMessage, openWhatsApp } from '@/lib/whatsapp'
@@ -65,8 +65,9 @@ export default function AdminBetsPage() {
 
   useEffect(() => {
     if (!user || user.role !== 'ADMIN') { router.push('/login'); return }
+    if (!accessToken) return
     fetchData()
-  }, [user, router])
+  }, [user, router, accessToken])
 
   useEffect(() => { applyFilters() }, [filters, bets])
 
@@ -148,8 +149,8 @@ export default function AdminBetsPage() {
 
   if (!user || isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-dvh bg-slate-950">
-        <Loader className="animate-spin text-amber-400" size={32} />
+      <div className="flex items-center justify-center min-h-dvh bg-base-100">
+        <span className="loading loading-spinner loading-lg text-primary" />
       </div>
     )
   }
@@ -157,26 +158,26 @@ export default function AdminBetsPage() {
   const hasFilters = filters.settlementStatus || filters.result
 
   return (
-    <div className="min-h-dvh bg-slate-950">
+    <div className="min-h-dvh bg-base-100 pb-20 sm:pb-0">
       <ToastContainer />
 
       {/* Header */}
-      <header className="sticky top-0 z-10 bg-slate-900/80 backdrop-blur-md border-b border-slate-800">
+      <header className="sticky top-0 z-10 bg-base-200/80 backdrop-blur-md border-b border-base-300">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex justify-between items-center">
           <div className="flex items-center gap-3">
             <Link
               href="/admin"
-              className="p-2 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-700/60 transition-colors"
+              className="btn btn-ghost btn-sm btn-circle"
               aria-label="Back to admin"
             >
               <ArrowLeft size={18} />
             </Link>
             <div>
-              <h1 className="text-base font-semibold text-slate-100">All Bets</h1>
-              <p className="text-xs text-slate-500">Manage and track all betting records</p>
+              <h1 className="text-base font-semibold text-base-content">All Bets</h1>
+              <p className="text-xs text-base-content/40">Manage and track all betting records</p>
             </div>
           </div>
-          <button onClick={handleLogout} className="btn-ghost text-xs px-3 py-2">
+          <button onClick={handleLogout} className="btn btn-ghost btn-sm gap-1">
             <LogOut size={14} />
             <span className="hidden sm:inline">Logout</span>
           </button>
@@ -185,182 +186,196 @@ export default function AdminBetsPage() {
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-4">
 
+        {/* Breadcrumb */}
+        <div className="breadcrumbs text-sm mb-4">
+          <ul>
+            <li><Link href="/admin">Admin</Link></li>
+            <li>All Bets</li>
+          </ul>
+        </div>
+
         {/* Filters */}
-        <div className="card">
-          <div className="flex items-center gap-2 mb-4">
-            <SlidersHorizontal size={15} className="text-slate-400" />
-            <h2 className="text-sm font-semibold text-slate-300">Filters</h2>
-            {hasFilters && (
-              <button
-                onClick={() => setFilters({ settlementStatus: '', result: '' })}
-                className="ml-auto text-xs text-amber-400 hover:text-amber-300 transition-colors"
-              >
-                Clear all
-              </button>
-            )}
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="label">Settlement Status</label>
-              <select
-                value={filters.settlementStatus}
-                onChange={(e) => setFilters(prev => ({ ...prev, settlementStatus: e.target.value }))}
-                className="input"
-              >
-                <option value="">All statuses</option>
-                <option value="pending">Pending</option>
-                <option value="collected">Collected</option>
-                <option value="settled">Settled</option>
-                <option value="lost_in_another_match">Lost in Another Match</option>
-              </select>
+        <div className="card bg-base-200 shadow-sm">
+          <div className="card-body">
+            <div className="flex items-center gap-2 mb-4">
+              <SlidersHorizontal size={15} className="text-base-content/60" />
+              <h2 className="text-sm font-semibold text-base-content/80">Filters</h2>
+              {hasFilters && (
+                <button
+                  onClick={() => setFilters({ settlementStatus: '', result: '' })}
+                  className="ml-auto btn btn-neutral btn-sm gap-1"
+                >
+                  Clear all
+                </button>
+              )}
             </div>
-            <div>
-              <label className="label">Result</label>
-              <select
-                value={filters.result}
-                onChange={(e) => setFilters(prev => ({ ...prev, result: e.target.value }))}
-                className="input"
-              >
-                <option value="">All results</option>
-                <option value="win">Win</option>
-                <option value="loss">Loss</option>
-                <option value="pending">Pending</option>
-              </select>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label htmlFor="filter-settlement" className="label"><span className="label-text">Settlement Status</span></label>
+                <select
+                  id="filter-settlement"
+                  value={filters.settlementStatus}
+                  onChange={(e) => setFilters(prev => ({ ...prev, settlementStatus: e.target.value }))}
+                  className="select select-bordered w-full"
+                >
+                  <option value="">All statuses</option>
+                  <option value="pending">Pending</option>
+                  <option value="collected">Collected</option>
+                  <option value="settled">Settled</option>
+                  <option value="lost_in_another_match">Lost in Another Match</option>
+                </select>
+              </div>
+              <div>
+                <label htmlFor="filter-result" className="label"><span className="label-text">Result</span></label>
+                <select
+                  id="filter-result"
+                  value={filters.result}
+                  onChange={(e) => setFilters(prev => ({ ...prev, result: e.target.value }))}
+                  className="select select-bordered w-full"
+                >
+                  <option value="">All results</option>
+                  <option value="win">Win</option>
+                  <option value="loss">Loss</option>
+                  <option value="pending">Pending</option>
+                </select>
+              </div>
             </div>
           </div>
         </div>
 
         {/* Bets Table */}
-        <div className="card p-0 overflow-hidden">
-          <div className="px-6 py-4 border-b border-slate-700/60 flex justify-between items-center">
-            <h2 className="text-sm font-semibold text-slate-300">Bets</h2>
-            <span className="text-xs text-slate-500">
-              {filteredBets.length} of {bets.length} records
-            </span>
-          </div>
-          <div className="overflow-x-auto">
-            {filteredBets.length > 0 ? (
-              <table className="table">
-                <thead>
-                  <tr>
-                    <th>Bookmaker</th>
-                    <th>Series</th>
-                    <th>Match</th>
-                    <th>Client</th>
-                    <th>Amount</th>
-                    <th>Odds</th>
-                    <th>Result</th>
-                    <th>P&L</th>
-                    <th>Settlement</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredBets.map(bet => (
-                    <tr key={bet.id}>
-                      <td>
-                        <div className="font-medium text-slate-200">{bet.user.name}</div>
-                        <div className="text-xs text-slate-500">{bet.user.phone}</div>
-                      </td>
-                      <td className="text-slate-400">{bet.match.series.name}</td>
-                      <td>
-                        <div className="font-medium">{bet.match.teamA} vs {bet.match.teamB}</div>
-                        <div className="text-xs text-slate-500 capitalize">{bet.match.status}</div>
-                      </td>
-                      <td>{bet.clientName}</td>
-                      <td className="tabular-nums font-medium">{formatINR(Number(bet.betAmount))}</td>
-                      <td className="text-slate-400 tabular-nums">{bet.odds}×</td>
-                      <td>
-                        <span className={
-                          bet.result === 'win' ? 'badge-success' :
-                          bet.result === 'loss' ? 'badge-danger' : 'badge-warning'
-                        }>
-                          {bet.result}
-                        </span>
-                      </td>
-                      <td className={`font-semibold tabular-nums ${bet.profitLoss >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                        {bet.profitLoss >= 0 ? '+' : ''}{formatINR(Number(bet.profitLoss))}
-                      </td>
-                      <td>
-                        <div className="space-y-1">
-                          <span className={
-                            bet.settlementStatus === 'settled' ? 'badge-success' :
-                            bet.settlementStatus === 'collected' ? 'badge-info' :
-                            bet.settlementStatus === 'lost_in_another_match' ? 'badge-danger' :
-                            'badge-warning'
-                          }>
-                            {bet.settlementStatus.replace(/_/g, ' ')}
-                          </span>
-                          {bet.linkedMatchId && (
-                            <div className="flex items-center gap-1 text-xs text-slate-500">
-                              <LinkIcon size={10} />
-                              Linked
-                            </div>
-                          )}
-                          {bet.paymentMethod && bet.paymentMethod !== 'pending' && (
-                            <span className={`inline-flex items-center gap-1 text-xs px-1.5 py-0.5 rounded font-medium ${
-                              bet.paymentMethod === 'upi'
-                                ? 'bg-emerald-500/15 text-emerald-400'
-                                : 'bg-slate-600/50 text-slate-400'
-                            }`}>
-                              {bet.paymentMethod === 'upi' ? 'UPI ✓' : 'Cash'}
-                            </span>
-                          )}
-                        </div>
-                      </td>
-                      <td>
-                        <div className="flex gap-1">
-                          <button
-                            onClick={() => handleEditBet(bet)}
-                            className="p-1.5 rounded-lg hover:bg-violet-500/10 text-slate-500 hover:text-violet-400 transition-colors"
-                            aria-label="Edit bet"
-                          >
-                            <Edit2 size={14} />
-                          </button>
-                          <button
-                            onClick={() => { setSelectedBet(bet); setIsDeleteModalOpen(true) }}
-                            className="p-1.5 rounded-lg hover:bg-red-500/10 text-slate-500 hover:text-red-400 transition-colors"
-                            aria-label="Delete bet"
-                          >
-                            <Trash2 size={14} />
-                          </button>
-                          <button
-                            onClick={() => {
-                              const msg = buildBetSlipMessage({
-                                clientName: bet.clientName,
-                                betOnTeam: bet.betOnTeam,
-                                betAmount: Number(bet.betAmount),
-                                odds: Number(bet.odds),
-                                betType: bet.betType || 'match_winner',
-                                result: bet.result,
-                                profitLoss: Number(bet.profitLoss),
-                                settlementStatus: bet.settlementStatus,
-                                paymentMethod: bet.paymentMethod,
-                                match: {
-                                  teamA: bet.match.teamA,
-                                  teamB: bet.match.teamB,
-                                  matchDate: bet.match.matchDate,
-                                  series: { name: bet.match.series.name },
-                                },
-                              })
-                              openWhatsApp(msg)
-                            }}
-                            className="p-1.5 text-slate-400 hover:text-[#25D366] hover:bg-green-500/10 rounded transition-colors"
-                            title="Share on WhatsApp"
-                          >
-                            <MessageCircle size={14} />
-                          </button>
-                        </div>
-                      </td>
+        <div className="card bg-base-200 shadow-sm">
+          <div className="card-body p-0">
+            <div className="px-6 py-4 border-b border-base-300 flex justify-between items-center">
+              <h2 className="text-sm font-semibold text-base-content/80">Bets</h2>
+              <span className="text-xs text-base-content/40">
+                {filteredBets.length} of {bets.length} records
+              </span>
+            </div>
+            <div className="overflow-x-auto">
+              {filteredBets.length > 0 ? (
+                <table className="table table-zebra">
+                  <thead>
+                    <tr>
+                      <th>Bookmaker</th>
+                      <th>Series</th>
+                      <th>Match</th>
+                      <th>Client</th>
+                      <th>Amount</th>
+                      <th>Odds</th>
+                      <th>Result</th>
+                      <th>P&amp;L</th>
+                      <th>Settlement</th>
+                      <th>Actions</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            ) : (
-              <div className="py-16 text-center text-slate-500 text-sm">
-                {hasFilters ? 'No bets match the selected filters' : 'No bets found'}
-              </div>
-            )}
+                  </thead>
+                  <tbody>
+                    {filteredBets.map(bet => (
+                      <tr key={bet.id}>
+                        <td>
+                          <div className="font-medium text-base-content">{bet.user.name}</div>
+                          <div className="text-xs text-base-content/40">{bet.user.phone}</div>
+                        </td>
+                        <td className="text-base-content/60">{bet.match.series.name}</td>
+                        <td>
+                          <div className="font-medium">{bet.match.teamA} vs {bet.match.teamB}</div>
+                          <div className="text-xs text-base-content/40 capitalize">{bet.match.status}</div>
+                        </td>
+                        <td>{bet.clientName}</td>
+                        <td className="tabular-nums font-medium">{formatINR(Number(bet.betAmount))}</td>
+                        <td className="text-base-content/60 tabular-nums">{bet.odds}×</td>
+                        <td>
+                          <span className={
+                            bet.result === 'win' ? 'badge badge-success' :
+                            bet.result === 'loss' ? 'badge badge-error' : 'badge badge-warning'
+                          }>
+                            {bet.result}
+                          </span>
+                        </td>
+                        <td className={`font-semibold tabular-nums ${bet.profitLoss >= 0 ? 'text-success' : 'text-error'}`}>
+                          {bet.profitLoss >= 0 ? '+' : ''}{formatINR(Number(bet.profitLoss))}
+                        </td>
+                        <td>
+                          <div className="space-y-1">
+                            <span className={
+                              bet.settlementStatus === 'settled' ? 'badge badge-success' :
+                              bet.settlementStatus === 'collected' ? 'badge badge-info' :
+                              bet.settlementStatus === 'lost_in_another_match' ? 'badge badge-error' :
+                              'badge badge-warning'
+                            }>
+                              {bet.settlementStatus.replace(/_/g, ' ')}
+                            </span>
+                            {bet.linkedMatchId && (
+                              <div className="flex items-center gap-1 text-xs text-base-content/40">
+                                <LinkIcon size={10} />
+                                Linked
+                              </div>
+                            )}
+                            {bet.paymentMethod && bet.paymentMethod !== 'pending' && (
+                              <span className={`inline-flex items-center gap-1 text-xs px-1.5 py-0.5 rounded font-medium ${
+                                bet.paymentMethod === 'upi'
+                                  ? 'badge badge-success badge-sm'
+                                  : 'badge badge-ghost badge-sm'
+                              }`}>
+                                {bet.paymentMethod === 'upi' ? 'UPI ✓' : 'Cash'}
+                              </span>
+                            )}
+                          </div>
+                        </td>
+                        <td>
+                          <div className="flex gap-1">
+                            <button
+                              onClick={() => handleEditBet(bet)}
+                              className="btn btn-ghost btn-xs"
+                              aria-label="Edit bet"
+                            >
+                              <Edit2 size={14} />
+                            </button>
+                            <button
+                              onClick={() => { setSelectedBet(bet); setIsDeleteModalOpen(true) }}
+                              className="btn btn-error btn-xs"
+                              aria-label="Delete bet"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                            <button
+                              onClick={() => {
+                                const msg = buildBetSlipMessage({
+                                  clientName: bet.clientName,
+                                  betOnTeam: bet.betOnTeam,
+                                  betAmount: Number(bet.betAmount),
+                                  odds: Number(bet.odds),
+                                  betType: bet.betType || 'match_winner',
+                                  result: bet.result,
+                                  profitLoss: Number(bet.profitLoss),
+                                  settlementStatus: bet.settlementStatus,
+                                  paymentMethod: bet.paymentMethod,
+                                  match: {
+                                    teamA: bet.match.teamA,
+                                    teamB: bet.match.teamB,
+                                    matchDate: bet.match.matchDate,
+                                    series: { name: bet.match.series.name },
+                                  },
+                                })
+                                openWhatsApp(msg)
+                              }}
+                              className="btn btn-ghost btn-xs"
+                              title="Share on WhatsApp"
+                            >
+                              <MessageCircle size={14} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              ) : (
+                <div className="py-16 text-center text-base-content/40 text-sm">
+                  {hasFilters ? 'No bets match the selected filters' : 'No bets found'}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </main>
@@ -369,17 +384,18 @@ export default function AdminBetsPage() {
       <Modal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)} title="Edit Bet">
         <div className="space-y-4">
           {selectedBet && (
-            <div className="bg-slate-700/30 rounded-lg px-4 py-3 text-sm text-slate-400">
-              <span className="font-medium text-slate-300">{selectedBet.clientName}</span>
+            <div className="bg-base-300 rounded-lg px-4 py-3 text-sm text-base-content/60">
+              <span className="font-medium text-base-content/80">{selectedBet.clientName}</span>
               {' — '}{selectedBet.match.teamA} vs {selectedBet.match.teamB}
             </div>
           )}
           <div>
-            <label className="label">Result</label>
+            <label htmlFor="edit-result" className="label"><span className="label-text">Result</span></label>
             <select
+              id="edit-result"
               value={editForm.result}
               onChange={(e) => setEditForm(prev => ({ ...prev, result: e.target.value }))}
-              className="input"
+              className="select select-bordered w-full"
             >
               <option value="pending">Pending</option>
               <option value="win">Win</option>
@@ -387,11 +403,12 @@ export default function AdminBetsPage() {
             </select>
           </div>
           <div>
-            <label className="label">Settlement Status</label>
+            <label htmlFor="edit-settlement" className="label"><span className="label-text">Settlement Status</span></label>
             <select
+              id="edit-settlement"
               value={editForm.settlementStatus}
               onChange={(e) => setEditForm(prev => ({ ...prev, settlementStatus: e.target.value }))}
-              className="input"
+              className="select select-bordered w-full"
             >
               <option value="pending">Pending</option>
               <option value="collected">Collected</option>
@@ -401,11 +418,12 @@ export default function AdminBetsPage() {
           </div>
           {editForm.settlementStatus === 'lost_in_another_match' && (
             <div>
-              <label className="label">Link to Match</label>
+              <label htmlFor="edit-linked-match" className="label"><span className="label-text">Link to Match</span></label>
               <select
+                id="edit-linked-match"
                 value={editForm.linkedMatchId}
                 onChange={(e) => setEditForm(prev => ({ ...prev, linkedMatchId: e.target.value }))}
-                className="input"
+                className="select select-bordered w-full"
               >
                 <option value="">Select a match...</option>
                 {allMatches.map(match => (
@@ -417,12 +435,12 @@ export default function AdminBetsPage() {
             </div>
           )}
           {(editForm.settlementStatus === 'collected' || editForm.settlementStatus === 'settled') && (
-            <div className="space-y-3 pt-2 border-t border-slate-700/60">
-              <p className="text-xs font-medium text-slate-400">Payment Details</p>
+            <div className="space-y-3 pt-2 border-t border-base-300">
+              <p className="text-xs font-medium text-base-content/60">Payment Details</p>
 
               {/* Payment Method */}
               <div>
-                <label className="label">Payment Method</label>
+                <label className="label"><span className="label-text">Payment Method</span></label>
                 <div className="flex gap-2">
                   {['upi', 'cash', 'pending'].map(m => (
                     <button
@@ -431,8 +449,8 @@ export default function AdminBetsPage() {
                       onClick={() => setEditForm(prev => ({ ...prev, paymentMethod: m }))}
                       className={`flex-1 py-1.5 text-xs rounded-md border font-medium capitalize transition-colors ${
                         editForm.paymentMethod === m
-                          ? 'border-amber-400 text-amber-400 bg-amber-400/10'
-                          : 'border-slate-600 text-slate-400 hover:border-slate-500'
+                          ? 'border-primary text-primary bg-primary/10'
+                          : 'border-base-300 text-base-content/60 hover:border-base-content/40'
                       }`}
                     >
                       {m.toUpperCase()}
@@ -444,34 +462,36 @@ export default function AdminBetsPage() {
               {/* UPI Transaction ID — only if UPI selected */}
               {editForm.paymentMethod === 'upi' && (
                 <div>
-                  <label className="label">UPI Transaction ID</label>
+                  <label htmlFor="edit-upi-txn" className="label"><span className="label-text">UPI Transaction ID</span></label>
                   <input
+                    id="edit-upi-txn"
                     type="text"
                     placeholder="T2506271234567"
                     value={editForm.upiTransactionId}
                     onChange={e => setEditForm(prev => ({ ...prev, upiTransactionId: e.target.value }))}
-                    className="input"
+                    className="input input-bordered w-full"
                   />
-                  <p className="text-xs text-slate-500 mt-1">Find this in your UPI app&apos;s transaction history</p>
+                  <p className="text-xs text-base-content/40 mt-1">Find this in your UPI app&apos;s transaction history</p>
                 </div>
               )}
 
               {/* Payment Note */}
               <div>
-                <label className="label">Payment Note <span className="text-slate-500 font-normal">(optional)</span></label>
+                <label htmlFor="edit-payment-note" className="label"><span className="label-text">Payment Note <span className="text-base-content/40 font-normal">(optional)</span></span></label>
                 <input
+                  id="edit-payment-note"
                   type="text"
                   placeholder="e.g. Paid via PhonePe"
                   value={editForm.paymentNote}
                   onChange={e => setEditForm(prev => ({ ...prev, paymentNote: e.target.value }))}
-                  className="input"
+                  className="input input-bordered w-full"
                 />
               </div>
             </div>
           )}
           <div className="flex gap-3 justify-end pt-2">
-            <button onClick={() => setIsEditModalOpen(false)} className="btn-secondary">Cancel</button>
-            <button onClick={handleSaveEdit} className="btn-primary">Save Changes</button>
+            <button onClick={() => setIsEditModalOpen(false)} className="btn btn-neutral">Cancel</button>
+            <button onClick={handleSaveEdit} className="btn btn-primary">Save Changes</button>
           </div>
         </div>
       </Modal>
