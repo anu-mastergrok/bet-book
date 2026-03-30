@@ -59,6 +59,7 @@ export default function FriendsPage() {
   }, [searchQuery, accessToken])
 
   const handleLink = async (friendId: string) => {
+    if (!accessToken) return
     try {
       const res = await fetch('/api/friends', {
         method: 'POST',
@@ -76,6 +77,7 @@ export default function FriendsPage() {
   }
 
   const handleUnlink = async (linkId: string) => {
+    if (!accessToken) return
     if (!confirm('Unlink this friend? Bet history is preserved.')) return
     try {
       const res = await fetch(`/api/friends/${linkId}`, {
@@ -91,6 +93,7 @@ export default function FriendsPage() {
   }
 
   const handleRecordPayment = async () => {
+    if (!accessToken) return
     if (!paymentModal) return
     try {
       const res = await fetch('/api/client-payments', {
@@ -219,8 +222,9 @@ export default function FriendsPage() {
                 <h2 className="text-base-content font-semibold text-lg">Record Payment — {paymentModal.friend.name}</h2>
 
                 <div>
-                  <label className="text-base-content/60 text-xs block mb-1">Amount Received (₹) *</label>
+                  <label htmlFor="friend-payment-amount" className="text-base-content/60 text-xs block mb-1">Amount Received (₹) *</label>
                   <input
+                    id="friend-payment-amount"
                     type="number"
                     value={paymentForm.amount}
                     onChange={e => setPaymentForm(p => ({ ...p, amount: e.target.value }))}
@@ -246,8 +250,9 @@ export default function FriendsPage() {
 
                 {paymentForm.method === 'upi' && (
                   <div>
-                    <label className="text-base-content/60 text-xs block mb-1">UPI Reference</label>
+                    <label htmlFor="friend-payment-upi" className="text-base-content/60 text-xs block mb-1">UPI Reference</label>
                     <input
+                      id="friend-payment-upi"
                       value={paymentForm.upiRef}
                       onChange={e => setPaymentForm(p => ({ ...p, upiRef: e.target.value }))}
                       placeholder="T2506271234567"
@@ -257,8 +262,9 @@ export default function FriendsPage() {
                 )}
 
                 <div>
-                  <label className="text-base-content/60 text-xs block mb-1">Note (optional)</label>
+                  <label htmlFor="friend-payment-note" className="text-base-content/60 text-xs block mb-1">Note (optional)</label>
                   <input
+                    id="friend-payment-note"
                     value={paymentForm.note}
                     onChange={e => setPaymentForm(p => ({ ...p, note: e.target.value }))}
                     placeholder="e.g. Partial payment"

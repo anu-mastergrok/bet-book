@@ -61,24 +61,23 @@ export default function HistoryPage() {
   useEffect(() => {
     if (!user) { router.push('/login'); return }
     if (user.role === 'ADMIN') { router.push('/admin'); return }
-    fetchBets()
-  }, [user, router])
-
-  const fetchBets = async () => {
     if (!accessToken) return
-    try {
-      const response = await fetch('/api/bets', {
-        headers: { Authorization: `Bearer ${accessToken}` },
-      })
-      if (!response.ok) throw new Error('Failed to fetch bets')
-      const { bets } = await response.json()
-      setBets(bets)
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Failed to load bets')
-    } finally {
-      setIsLoading(false)
+    const fetchBets = async () => {
+      try {
+        const response = await fetch('/api/bets', {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        })
+        if (!response.ok) throw new Error('Failed to fetch bets')
+        const { bets } = await response.json()
+        setBets(bets)
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : 'Failed to load bets')
+      } finally {
+        setIsLoading(false)
+      }
     }
-  }
+    fetchBets()
+  }, [user, router, accessToken, toast])
 
   const isFiltersActive = filters.result !== '' || filters.settlement !== '' || filters.dateFrom !== '' || filters.dateTo !== ''
 
@@ -195,8 +194,9 @@ export default function HistoryPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                 {/* Result filter */}
                 <div>
-                  <label className="block text-xs text-base-content/40 mb-1.5">Result</label>
+                  <label htmlFor="filter-result" className="block text-xs text-base-content/40 mb-1.5">Result</label>
                   <select
+                    id="filter-result"
                     value={filters.result}
                     onChange={e => setFilters(f => ({ ...f, result: e.target.value }))}
                     className="select select-bordered w-full"
@@ -210,8 +210,9 @@ export default function HistoryPage() {
 
                 {/* Settlement filter */}
                 <div>
-                  <label className="block text-xs text-base-content/40 mb-1.5">Settlement</label>
+                  <label htmlFor="filter-settlement" className="block text-xs text-base-content/40 mb-1.5">Settlement</label>
                   <select
+                    id="filter-settlement"
                     value={filters.settlement}
                     onChange={e => setFilters(f => ({ ...f, settlement: e.target.value }))}
                     className="select select-bordered w-full"
@@ -226,8 +227,9 @@ export default function HistoryPage() {
 
                 {/* Date From */}
                 <div>
-                  <label className="block text-xs text-base-content/40 mb-1.5">Date From</label>
+                  <label htmlFor="filter-date-from" className="block text-xs text-base-content/40 mb-1.5">Date From</label>
                   <input
+                    id="filter-date-from"
                     type="date"
                     value={filters.dateFrom}
                     onChange={e => setFilters(f => ({ ...f, dateFrom: e.target.value }))}
@@ -237,8 +239,9 @@ export default function HistoryPage() {
 
                 {/* Date To */}
                 <div>
-                  <label className="block text-xs text-base-content/40 mb-1.5">Date To</label>
+                  <label htmlFor="filter-date-to" className="block text-xs text-base-content/40 mb-1.5">Date To</label>
                   <input
+                    id="filter-date-to"
                     type="date"
                     value={filters.dateTo}
                     onChange={e => setFilters(f => ({ ...f, dateTo: e.target.value }))}
@@ -290,8 +293,8 @@ export default function HistoryPage() {
           {/* Total Bets */}
           <div className="stat">
             <div className="stat-figure">
-              <div className="p-2 bg-violet-500/10 rounded-lg">
-                <IndianRupee className="text-violet-400" size={20} />
+              <div className="p-2 bg-secondary/10 rounded-lg">
+                <IndianRupee className="text-secondary" size={20} />
               </div>
             </div>
             <div className="stat-title">Showing</div>
