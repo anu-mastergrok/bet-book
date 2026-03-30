@@ -52,26 +52,26 @@ export default function NewBetPage() {
   useEffect(() => {
     if (!user) { router.push('/login'); return }
     if (user.role === 'ADMIN') { router.push('/admin'); return }
-    fetchData()
-  }, [user, router])
-
-  const fetchData = async () => {
-    try {
-      const [seriesRes, matchesRes] = await Promise.all([
-        fetch('/api/series', { headers: { Authorization: `Bearer ${accessToken}` } }),
-        fetch('/api/matches?activated=true', { headers: { Authorization: `Bearer ${accessToken}` } }),
-      ])
-      if (!seriesRes.ok || !matchesRes.ok) throw new Error('Failed to fetch data')
-      const seriesData = await seriesRes.json()
-      const matchesData = await matchesRes.json()
-      setSeries(seriesData.series)
-      setMatches(matchesData.matches)
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Failed to load data')
-    } finally {
-      setIsLoading(false)
+    if (!accessToken) return
+    async function loadData() {
+      try {
+        const [seriesRes, matchesRes] = await Promise.all([
+          fetch('/api/series', { headers: { Authorization: `Bearer ${accessToken}` } }),
+          fetch('/api/matches?activated=true', { headers: { Authorization: `Bearer ${accessToken}` } }),
+        ])
+        if (!seriesRes.ok || !matchesRes.ok) throw new Error('Failed to fetch data')
+        const seriesData = await seriesRes.json()
+        const matchesData = await matchesRes.json()
+        setSeries(seriesData.series)
+        setMatches(matchesData.matches)
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : 'Failed to load data')
+      } finally {
+        setIsLoading(false)
+      }
     }
-  }
+    loadData()
+  }, [user, accessToken, router])
 
   const handlePreset = (amount: number) => {
     setSelectedPreset(amount)
@@ -198,10 +198,10 @@ export default function NewBetPage() {
                 </div>
 
                 {selectedMatch && (
-                  <div className="bg-violet-500/5 border border-violet-500/20 rounded-lg p-4 space-y-2">
+                  <div className="bg-primary/5 border border-primary/20 rounded-lg p-4 space-y-2">
                     <div className="flex items-center gap-2 text-xs text-base-content/60">
-                      <TrendingUp size={13} className="text-violet-400" />
-                      <span className="font-medium text-violet-300">{selectedSeries?.name}</span>
+                      <TrendingUp size={13} className="text-primary" />
+                      <span className="font-medium text-primary/80">{selectedSeries?.name}</span>
                     </div>
                     <div className="flex items-center gap-2 text-xs text-base-content/60">
                       <MapPin size={13} />
@@ -211,11 +211,10 @@ export default function NewBetPage() {
                       <Calendar size={13} />
                       {new Date(selectedMatch.matchDate).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}
                     </div>
-                    <span className={`inline-flex mt-1 text-xs px-2 py-0.5 rounded-full font-medium ${
-                      selectedMatch.status === 'live' ? 'bg-success/15 text-success' :
-                      selectedMatch.status === 'completed' ? 'bg-base-300 text-base-content/60' :
-                      'bg-primary/15 text-primary'
-                    }`}>
+                    <span className={
+                      selectedMatch.status === 'live' ? 'badge badge-success' :
+                      selectedMatch.status === 'upcoming' ? 'badge badge-primary' : 'badge badge-ghost'
+                    }>
                       {selectedMatch.status}
                     </span>
                   </div>

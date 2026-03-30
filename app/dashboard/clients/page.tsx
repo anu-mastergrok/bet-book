@@ -63,8 +63,6 @@ export default function ClientDuesPage() {
   const toast = useToast()
 
   const [isLoading, setIsLoading] = useState(true)
-  const [bets, setBets] = useState<Bet[]>([])
-  const [payments, setPayments] = useState<ClientPayment[]>([])
   const [clients, setClients] = useState<ClientData[]>([])
 
   // Record payment modal state
@@ -81,41 +79,41 @@ export default function ClientDuesPage() {
   useEffect(() => {
     if (!user) { router.push('/login'); return }
     if (user.role === 'ADMIN') { router.push('/admin'); return }
-    fetchData()
-  }, [user, router])
+    if (!accessToken) return
+    async function loadData() {
+      try {
+        const [betsRes, paymentsRes] = await Promise.all([
+          fetch('/api/bets', { headers: { Authorization: `Bearer ${accessToken}` } }),
+          fetch('/api/client-payments', { headers: { Authorization: `Bearer ${accessToken}` } }),
+        ])
 
-  const fetchData = async () => {
+        if (!betsRes.ok) throw new Error('Failed to fetch bets')
+        if (!paymentsRes.ok) throw new Error('Failed to fetch payments')
+
+        const { bets: fetchedBets } = await betsRes.json()
+        const { payments: fetchedPayments } = await paymentsRes.json()
+
+        computeClients(fetchedBets, fetchedPayments)
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : 'Failed to load data')
+      } finally {
+        setIsLoading(false)
+      }
+    }
+    loadData()
+  }, [user, accessToken, router])
+
+  const fetchPayments = async () => {
     try {
       const [betsRes, paymentsRes] = await Promise.all([
         fetch('/api/bets', { headers: { Authorization: `Bearer ${accessToken}` } }),
         fetch('/api/client-payments', { headers: { Authorization: `Bearer ${accessToken}` } }),
       ])
-
       if (!betsRes.ok) throw new Error('Failed to fetch bets')
       if (!paymentsRes.ok) throw new Error('Failed to fetch payments')
-
       const { bets: fetchedBets } = await betsRes.json()
       const { payments: fetchedPayments } = await paymentsRes.json()
-
-      setBets(fetchedBets)
-      setPayments(fetchedPayments)
       computeClients(fetchedBets, fetchedPayments)
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Failed to load data')
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  const fetchPayments = async () => {
-    try {
-      const res = await fetch('/api/client-payments', {
-        headers: { Authorization: `Bearer ${accessToken}` },
-      })
-      if (!res.ok) throw new Error('Failed to fetch payments')
-      const { payments: fetchedPayments } = await res.json()
-      setPayments(fetchedPayments)
-      computeClients(bets, fetchedPayments)
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Failed to refresh payments')
     }
@@ -487,10 +485,11 @@ export default function ClientDuesPage() {
         <div className="space-y-4">
           {/* Amount */}
           <div>
-            <label className="label">
+            <label htmlFor="payment-amount" className="label">
               <span className="label-text">Amount (₹) <span className="text-error">*</span></span>
             </label>
             <input
+              id="payment-amount"
               type="number"
               min="1"
               placeholder="e.g. 5000"
@@ -526,10 +525,11 @@ export default function ClientDuesPage() {
           {/* UPI Reference */}
           {paymentForm.method === 'upi' && (
             <div>
-              <label className="label">
+              <label htmlFor="payment-upi-ref" className="label">
                 <span className="label-text">UPI Reference <span className="text-error">*</span></span>
               </label>
               <input
+                id="payment-upi-ref"
                 type="text"
                 placeholder="e.g. UPI/123456789"
                 value={paymentForm.upiRef}
@@ -541,10 +541,11 @@ export default function ClientDuesPage() {
 
           {/* Note */}
           <div>
-            <label className="label">
+            <label htmlFor="payment-note" className="label">
               <span className="label-text">Note (optional)</span>
             </label>
             <input
+              id="payment-note"
               type="text"
               placeholder="e.g. Partial settlement"
               value={paymentForm.note}
