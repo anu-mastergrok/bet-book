@@ -1,0 +1,23 @@
+app/friend/bets/page.tsx
+  23f9709f12aec394 62-63,68,81,83,88,191-193,195
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.22",
+  "base_commit_sha": "da63160ecec6ef0ae5dda99ac32e33d6b22689b1",
+  "prompts": {
+    "23f9709f12aec394": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "3b02e19c-0535-43b5-aa66-01f66669d9e1",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "S Kumar <skumar@ascend-marketing.com>",
+      "messages": [],
+      "total_additions": 10,
+      "total_deletions": 2,
+      "accepted_lines": 10,
+      "overriden_lines": 0
+    }
+  }
+}
