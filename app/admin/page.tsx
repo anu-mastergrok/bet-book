@@ -5,9 +5,10 @@ import { useRouter } from 'next/navigation'
 import { useAuth } from '@/context/AuthContext'
 import { useToast, ToastContainer } from '@/components/Toast'
 import { Modal, ConfirmModal } from '@/components/Modal'
+import { useTheme } from '@/components/ThemeProvider'
 import {
   LogOut, Plus, TrendingUp, TrendingDown, Users, Zap,
-  Loader, BarChart3, Calendar, Clock, Shield, Edit2, Trash2, RefreshCw,
+  BarChart3, Calendar, Clock, Shield, Edit2, Trash2, RefreshCw, Sun, Moon,
 } from 'lucide-react'
 import Link from 'next/link'
 import { formatINR } from '@/lib/format'
@@ -69,6 +70,7 @@ export default function AdminPage() {
   const router = useRouter()
   const { user, logout, accessToken } = useAuth()
   const toast = useToast()
+  const { theme, toggle } = useTheme()
   const [isLoading, setIsLoading] = useState(true)
   const [stats, setStats] = useState<SummaryStats | null>(null)
   const [seriesData, setSeriesData] = useState<SeriesData[]>([])
@@ -102,8 +104,9 @@ export default function AdminPage() {
 
   useEffect(() => {
     if (!user || user.role !== 'ADMIN') { router.push('/login'); return }
+    if (!accessToken) return
     fetchData()
-  }, [user, router])
+  }, [user, router, accessToken])
 
   const fetchData = async () => {
     try {
@@ -299,57 +302,52 @@ export default function AdminPage() {
 
   if (!user || isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-dvh bg-slate-950">
+      <div className="flex items-center justify-center min-h-dvh bg-base-100">
         <div className="flex flex-col items-center gap-3">
-          <Loader className="animate-spin text-amber-400" size={32} />
-          <p className="text-slate-500 text-sm">Loading admin panel...</p>
+          <span className="loading loading-spinner loading-lg text-primary" />
+          <p className="text-base-content/40 text-sm">Loading admin panel...</p>
         </div>
       </div>
     )
   }
 
-  if (!stats) return <div className="min-h-dvh bg-slate-950 flex items-center justify-center text-slate-400">Error loading data</div>
-
-  const statCards = [
-    { label: 'Total Users', value: stats.totalUsers, icon: Users, color: 'text-violet-400', bg: 'bg-violet-500/10' },
-    { label: 'Series', value: stats.totalSeries, icon: BarChart3, color: 'text-blue-400', bg: 'bg-blue-500/10' },
-    { label: 'Matches', value: stats.totalMatches, icon: Calendar, color: 'text-cyan-400', bg: 'bg-cyan-500/10' },
-    { label: 'Total Bets', value: stats.totalBets, icon: Zap, color: 'text-amber-400', bg: 'bg-amber-500/10' },
-    { label: 'Pending Settlements', value: stats.pendingSettlements, icon: Clock, color: 'text-orange-400', bg: 'bg-orange-500/10' },
-  ]
+  if (!stats) return <div className="min-h-dvh bg-base-100 flex items-center justify-center text-base-content/60">Error loading data</div>
 
   const matchTypes = ['T20', 'ODI', 'Test', 'IPL', 'Domestic']
 
   return (
-    <div className="min-h-dvh bg-slate-950">
+    <div className="min-h-dvh bg-base-100 pb-20 sm:pb-0">
       <ToastContainer />
 
       {/* Header */}
-      <header className="sticky top-0 z-10 bg-slate-900/80 backdrop-blur-md border-b border-slate-800">
+      <header className="sticky top-0 z-10 bg-base-200/80 backdrop-blur-md border-b border-base-300">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex justify-between items-center">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-amber-500/10 border border-amber-500/20 rounded-lg flex items-center justify-center">
-              <Shield className="text-amber-400" size={15} />
+            <div className="w-8 h-8 bg-primary/10 border border-primary/20 rounded-lg flex items-center justify-center">
+              <Shield className="text-primary" size={15} />
             </div>
             <div>
-              <h1 className="text-base font-semibold text-slate-100">Admin Dashboard</h1>
-              <p className="text-xs text-slate-500">Welcome, {user.name}</p>
+              <h1 className="text-base font-semibold text-base-content">Admin Dashboard <span className="badge badge-warning badge-sm align-middle ml-1">ADMIN</span></h1>
+              <p className="text-xs text-base-content/40">Welcome, {user.name}</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <Link href="/admin/bets" className="hidden sm:inline-flex btn-primary text-xs px-3 py-2">
+            <Link href="/admin/bets" className="hidden sm:inline-flex btn btn-primary btn-sm gap-1">
               <Zap size={14} />
               <span>All Bets</span>
             </Link>
             <button
               onClick={handleSyncNow}
               disabled={isSyncing}
-              className="btn-ghost text-xs px-3 py-2 flex items-center gap-1.5"
+              className="btn btn-neutral btn-sm gap-1"
             >
-              {isSyncing ? <Loader className="animate-spin" size={14} /> : <RefreshCw size={14} />}
+              {isSyncing ? <span className="loading loading-spinner loading-xs" /> : <RefreshCw size={14} />}
               <span className="hidden sm:inline">{isSyncing ? 'Syncing...' : 'Sync Now'}</span>
             </button>
-            <button onClick={handleLogout} className="btn-ghost text-xs px-3 py-2">
+            <button onClick={toggle} className="btn btn-ghost btn-sm btn-circle" aria-label="Toggle theme">
+              {theme === 'night' ? <Sun size={16} /> : <Moon size={16} />}
+            </button>
+            <button onClick={handleLogout} className="btn btn-ghost btn-sm gap-1">
               <LogOut size={14} />
               <span className="hidden sm:inline">Logout</span>
             </button>
@@ -360,220 +358,252 @@ export default function AdminPage() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-6">
 
         {/* Stats */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-          {statCards.map(({ label, value, icon: Icon, color, bg }) => (
-            <div key={label} className="card">
-              <div className={`inline-flex p-2 rounded-lg ${bg} mb-3`}>
-                <Icon className={color} size={18} />
-              </div>
-              <p className="text-2xl font-bold text-slate-100 tabular-nums">{value}</p>
-              <p className="text-xs text-slate-500 mt-0.5">{label}</p>
+        <div className="stats stats-vertical sm:stats-horizontal shadow bg-base-200 w-full">
+          <div className="stat">
+            <div className="stat-figure text-secondary">
+              <Users size={24} className="text-base-content/60" />
             </div>
-          ))}
-
-          {/* P&L Card */}
-          <div className={`card border ${stats.totalPnL >= 0 ? 'border-emerald-500/20' : 'border-red-500/20'}`}>
-            <div className={`inline-flex p-2 rounded-lg mb-3 ${stats.totalPnL >= 0 ? 'bg-emerald-500/10' : 'bg-red-500/10'}`}>
+            <div className="stat-title">Total Users</div>
+            <div className="stat-value">{stats.totalUsers}</div>
+          </div>
+          <div className="stat">
+            <div className="stat-figure">
+              <BarChart3 size={24} className="text-base-content/60" />
+            </div>
+            <div className="stat-title">Series</div>
+            <div className="stat-value">{stats.totalSeries}</div>
+          </div>
+          <div className="stat">
+            <div className="stat-figure">
+              <Calendar size={24} className="text-base-content/60" />
+            </div>
+            <div className="stat-title">Matches</div>
+            <div className="stat-value">{stats.totalMatches}</div>
+          </div>
+          <div className="stat">
+            <div className="stat-figure">
+              <Zap size={24} className="text-base-content/60" />
+            </div>
+            <div className="stat-title">Total Bets</div>
+            <div className="stat-value">{stats.totalBets}</div>
+          </div>
+          <div className="stat">
+            <div className="stat-figure">
+              <Clock size={24} className="text-base-content/60" />
+            </div>
+            <div className="stat-title">Pending Settlements</div>
+            <div className="stat-value">{stats.pendingSettlements}</div>
+          </div>
+          <div className="stat">
+            <div className="stat-figure">
               {stats.totalPnL >= 0
-                ? <TrendingUp className="text-emerald-400" size={18} />
-                : <TrendingDown className="text-red-400" size={18} />
+                ? <TrendingUp size={24} className="text-success" />
+                : <TrendingDown size={24} className="text-error" />
               }
             </div>
-            <p className={`text-2xl font-bold tabular-nums ${stats.totalPnL >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+            <div className="stat-title">Total P&L</div>
+            <div className={`stat-value text-2xl ${stats.totalPnL >= 0 ? 'text-success' : 'text-error'}`}>
               {formatINR(Number(stats.totalPnL), true)}
-            </p>
-            <p className="text-xs text-slate-500 mt-0.5">Total P&L</p>
+            </div>
           </div>
         </div>
 
         {/* Series & Matches */}
-        <div className="card p-0 overflow-hidden">
-          <div className="px-6 py-4 border-b border-slate-700/60 flex justify-between items-center">
-            <h2 className="text-sm font-semibold text-slate-300">Series & Matches</h2>
-            <button
-              onClick={() => setIsSeriesModalOpen(true)}
-              className="btn-primary text-xs px-3 py-2"
-            >
-              <Plus size={14} />
-              New Series
-            </button>
-          </div>
+        <div className="card bg-base-200 shadow-sm">
+          <div className="card-body p-0">
+            <div className="px-6 py-4 border-b border-base-300 flex justify-between items-center">
+              <h2 className="text-sm font-semibold text-base-content/80">Series &amp; Matches</h2>
+              <button
+                onClick={() => setIsSeriesModalOpen(true)}
+                className="btn btn-primary btn-sm gap-1"
+              >
+                <Plus size={14} />
+                New Series
+              </button>
+            </div>
 
-          <div className="divide-y divide-slate-700/40">
-            {seriesData.length === 0 ? (
-              <div className="py-12 text-center text-slate-500 text-sm">No series created yet</div>
-            ) : (
-              seriesData.map(s => (
-                <div key={s.id} className="px-6 py-4">
-                  <div className="flex items-start justify-between mb-3">
-                    <div>
-                      <h3 className="font-semibold text-slate-200">{s.name}</h3>
-                      <p className="text-xs text-slate-500 mt-0.5">
-                        {new Date(s.startDate).toLocaleDateString('en-IN')} — {new Date(s.endDate).toLocaleDateString('en-IN')}
-                      </p>
+            <div className="divide-y divide-base-300">
+              {seriesData.length === 0 ? (
+                <div className="py-12 text-center text-base-content/40 text-sm">No series created yet</div>
+              ) : (
+                seriesData.map(s => (
+                  <div key={s.id} className="px-6 py-4">
+                    <div className="flex items-start justify-between mb-3">
+                      <div>
+                        <h3 className="font-semibold text-base-content">{s.name}</h3>
+                        <p className="text-xs text-base-content/40 mt-0.5">
+                          {new Date(s.startDate).toLocaleDateString('en-IN')} — {new Date(s.endDate).toLocaleDateString('en-IN')}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className={s.status === 'active' ? 'badge badge-success' : 'badge badge-ghost'}>
+                          {s.status}
+                        </span>
+                        <button
+                          onClick={() => handleEditSeries(s)}
+                          className="btn btn-ghost btn-xs"
+                          title="Edit series"
+                        >
+                          <Edit2 size={14} />
+                        </button>
+                        <button
+                          onClick={() => { setDeletingSeriesId(s.id); setIsDeleteSeriesModalOpen(true) }}
+                          className="btn btn-error btn-xs"
+                          title="Delete series"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                        <button
+                          onClick={() => {
+                            setMatchForm(prev => ({ ...prev, seriesId: s.id }))
+                            setIsMatchModalOpen(true)
+                          }}
+                          className="btn btn-neutral btn-sm gap-1"
+                        >
+                          <Plus size={12} />
+                          Add Match
+                        </button>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <span className={s.status === 'active' ? 'badge-success' : 'badge-muted'}>
-                        {s.status}
-                      </span>
-                      <button
-                        onClick={() => handleEditSeries(s)}
-                        className="p-1.5 text-slate-400 hover:text-amber-400 transition-colors"
-                        title="Edit series"
-                      >
-                        <Edit2 size={14} />
-                      </button>
-                      <button
-                        onClick={() => { setDeletingSeriesId(s.id); setIsDeleteSeriesModalOpen(true) }}
-                        className="p-1.5 text-slate-400 hover:text-red-400 transition-colors"
-                        title="Delete series"
-                      >
-                        <Trash2 size={14} />
-                      </button>
-                      <button
-                        onClick={() => {
-                          setMatchForm(prev => ({ ...prev, seriesId: s.id }))
-                          setIsMatchModalOpen(true)
-                        }}
-                        className="btn-secondary text-xs px-2.5 py-1.5"
-                      >
-                        <Plus size={12} />
-                        Add Match
-                      </button>
-                    </div>
-                  </div>
 
-                  {s.matches.length > 0 && (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-                      {s.matches.map(match => (
-                        <div key={match.id} className="bg-slate-700/30 border border-slate-700/50 rounded-lg px-3 py-2">
-                          <div className="flex items-start justify-between gap-2">
-                            <p className="text-sm font-medium text-slate-200">
-                              {match.teamA} <span className="text-slate-500 font-normal">vs</span> {match.teamB}
-                            </p>
-                            <div className="flex items-center gap-1 shrink-0">
-                              <button
-                                onClick={() => handleEditMatch(match, s.id)}
-                                className="p-1 text-slate-500 hover:text-amber-400 transition-colors"
-                                title="Edit match"
-                              >
-                                <Edit2 size={12} />
-                              </button>
-                              <button
-                                onClick={() => { setDeletingMatchId(match.id); setIsDeleteMatchModalOpen(true) }}
-                                className="p-1 text-slate-500 hover:text-red-400 transition-colors"
-                                title="Delete match"
-                              >
-                                <Trash2 size={12} />
-                              </button>
+                    {s.matches.length > 0 && (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                        {s.matches.map(match => (
+                          <div key={match.id} className="card bg-base-300 shadow-sm">
+                            <div className="card-body p-3">
+                              <div className="flex items-start justify-between gap-2">
+                                <p className="text-sm font-medium text-base-content">
+                                  {match.teamA} <span className="text-base-content/40 font-normal">vs</span> {match.teamB}
+                                </p>
+                                <div className="flex items-center gap-1 shrink-0">
+                                  <button
+                                    onClick={() => handleEditMatch(match, s.id)}
+                                    className="btn btn-ghost btn-xs"
+                                    title="Edit match"
+                                  >
+                                    <Edit2 size={12} />
+                                  </button>
+                                  <button
+                                    onClick={() => { setDeletingMatchId(match.id); setIsDeleteMatchModalOpen(true) }}
+                                    className="btn btn-error btn-xs"
+                                    title="Delete match"
+                                  >
+                                    <Trash2 size={12} />
+                                  </button>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2 mt-1">
+                                {match.status === 'live' ? (
+                                  <span className="inline-flex items-center gap-1">
+                                    <span className="relative flex h-2 w-2">
+                                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-success opacity-75"></span>
+                                      <span className="relative inline-flex rounded-full h-2 w-2 bg-success"></span>
+                                    </span>
+                                    <span className="text-success text-xs font-medium">LIVE</span>
+                                  </span>
+                                ) : (
+                                  <span className={`text-xs ${
+                                    match.status === 'completed' ? 'text-base-content/40' : 'text-primary'
+                                  }`}>
+                                    {match.status}
+                                  </span>
+                                )}
+                                {match.matchType && (
+                                  <>
+                                    <span className="text-base-content/20">·</span>
+                                    <span className="text-xs text-base-content/40">{match.matchType}</span>
+                                  </>
+                                )}
+                                <span className="text-base-content/20">·</span>
+                                <span className="text-xs text-base-content/40">{match._count?.betEntries || 0} bets</span>
+                              </div>
+                              {match.liveScore && match.status === 'live' && (
+                                <div className="text-xs text-success mt-1 truncate">{match.liveScore}</div>
+                              )}
+                              {match.result && match.status === 'completed' && (
+                                <div className="text-xs text-base-content/60 mt-1 truncate">{match.result}</div>
+                              )}
                             </div>
                           </div>
-                          <div className="flex items-center gap-2 mt-1">
-                            {match.status === 'live' ? (
-                              <span className="inline-flex items-center gap-1">
-                                <span className="relative flex h-2 w-2">
-                                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-                                </span>
-                                <span className="text-emerald-400 text-xs font-medium">LIVE</span>
-                              </span>
-                            ) : (
-                              <span className={`text-xs ${
-                                match.status === 'completed' ? 'text-slate-500' : 'text-amber-400'
-                              }`}>
-                                {match.status}
-                              </span>
-                            )}
-                            {match.matchType && (
-                              <>
-                                <span className="text-slate-600">·</span>
-                                <span className="text-xs text-slate-500">{match.matchType}</span>
-                              </>
-                            )}
-                            <span className="text-slate-600">·</span>
-                            <span className="text-xs text-slate-500">{match._count?.betEntries || 0} bets</span>
-                          </div>
-                          {match.liveScore && match.status === 'live' && (
-                            <div className="text-xs text-emerald-400 mt-1 truncate">{match.liveScore}</div>
-                          )}
-                          {match.result && match.status === 'completed' && (
-                            <div className="text-xs text-slate-400 mt-1 truncate">{match.result}</div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ))
-            )}
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))
+              )}
+            </div>
           </div>
         </div>
 
         {/* Imported Matches */}
         {importedMatches.length > 0 && (
-          <div className="card p-0 overflow-hidden">
-            <div className="px-6 py-4 border-b border-slate-700/60 flex justify-between items-center">
-              <h2 className="text-sm font-semibold text-slate-300">Imported Matches</h2>
-              <span className="text-xs text-slate-500">{importedMatches.length} pending activation</span>
-            </div>
-            <div className="divide-y divide-slate-700/40">
-              {importedMatches.map(match => (
-                <div key={match.id} className="px-6 py-3 flex items-center justify-between gap-4">
-                  <div className="min-w-0">
-                    <div className="text-sm font-medium text-slate-200 truncate">
-                      {match.teamA} vs {match.teamB}
+          <div className="card bg-base-200 shadow-sm">
+            <div className="card-body p-0">
+              <div className="px-6 py-4 border-b border-base-300 flex justify-between items-center">
+                <h2 className="text-sm font-semibold text-base-content/80">Imported Matches</h2>
+                <span className="text-xs text-base-content/40">{importedMatches.length} pending activation</span>
+              </div>
+              <div className="divide-y divide-base-300">
+                {importedMatches.map(match => (
+                  <div key={match.id} className="px-6 py-3 flex items-center justify-between gap-4">
+                    <div className="min-w-0">
+                      <div className="text-sm font-medium text-base-content truncate">
+                        {match.teamA} vs {match.teamB}
+                      </div>
+                      <div className="text-xs text-base-content/40 mt-0.5">
+                        {match.series.name} · {match.matchType} · {new Date(match.matchDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                        {match.venue && ` · ${match.venue}`}
+                      </div>
                     </div>
-                    <div className="text-xs text-slate-500 mt-0.5">
-                      {match.series.name} · {match.matchType} · {new Date(match.matchDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
-                      {match.venue && ` · ${match.venue}`}
-                    </div>
+                    <button
+                      onClick={() => handleActivateMatch(match.id)}
+                      disabled={activatingId === match.id}
+                      className="btn btn-success btn-xs shrink-0"
+                    >
+                      {activatingId === match.id ? <span className="loading loading-spinner loading-xs" /> : 'Activate'}
+                    </button>
                   </div>
-                  <button
-                    onClick={() => handleActivateMatch(match.id)}
-                    disabled={activatingId === match.id}
-                    className="btn-primary text-xs px-3 py-1.5 shrink-0"
-                  >
-                    {activatingId === match.id ? <Loader className="animate-spin" size={12} /> : 'Activate'}
-                  </button>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </div>
         )}
 
         {/* Recent Bets */}
-        <div className="card p-0 overflow-hidden">
-          <div className="px-6 py-4 border-b border-slate-700/60 flex justify-between items-center">
-            <h2 className="text-sm font-semibold text-slate-300">Recent Bets</h2>
-            <Link href="/admin/bets" className="text-xs text-amber-400 hover:text-amber-300 transition-colors">
-              View all →
-            </Link>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="table">
-              <thead>
-                <tr>
-                  <th>Series</th>
-                  <th>Match</th>
-                  <th>Client</th>
-                  <th>Amount</th>
-                  <th>P&L</th>
-                </tr>
-              </thead>
-              <tbody>
-                {recentBets.map(bet => (
-                  <tr key={bet.id}>
-                    <td className="text-slate-400">{bet.match.series.name}</td>
-                    <td>{bet.match.teamA} vs {bet.match.teamB}</td>
-                    <td>{bet.clientName}</td>
-                    <td className="tabular-nums">{formatINR(Number(bet.betAmount))}</td>
-                    <td className={`font-semibold tabular-nums ${bet.profitLoss >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                      {bet.profitLoss >= 0 ? '+' : ''}{formatINR(Number(bet.profitLoss))}
-                    </td>
+        <div className="card bg-base-200 shadow-sm">
+          <div className="card-body p-0">
+            <div className="px-6 py-4 border-b border-base-300 flex justify-between items-center">
+              <h2 className="text-sm font-semibold text-base-content/80">Recent Bets</h2>
+              <Link href="/admin/bets" className="text-xs text-primary hover:text-primary/80 transition-colors">
+                View all →
+              </Link>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="table table-zebra">
+                <thead>
+                  <tr>
+                    <th>Series</th>
+                    <th>Match</th>
+                    <th>Client</th>
+                    <th>Amount</th>
+                    <th>P&amp;L</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {recentBets.map(bet => (
+                    <tr key={bet.id}>
+                      <td className="text-base-content/60">{bet.match.series.name}</td>
+                      <td>{bet.match.teamA} vs {bet.match.teamB}</td>
+                      <td>{bet.clientName}</td>
+                      <td className="tabular-nums">{formatINR(Number(bet.betAmount))}</td>
+                      <td className={`font-semibold tabular-nums ${bet.profitLoss >= 0 ? 'text-success' : 'text-error'}`}>
+                        {bet.profitLoss >= 0 ? '+' : ''}{formatINR(Number(bet.profitLoss))}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       </main>
@@ -582,41 +612,44 @@ export default function AdminPage() {
       <Modal isOpen={isSeriesModalOpen} onClose={() => setIsSeriesModalOpen(false)} title="Create New Series">
         <form onSubmit={handleAddSeries} className="space-y-4">
           <div>
-            <label className="label">Series Name <span className="text-red-400">*</span></label>
+            <label htmlFor="series-name" className="label"><span className="label-text">Series Name <span className="text-error">*</span></span></label>
             <input
+              id="series-name"
               type="text"
               value={seriesForm.name}
               onChange={(e) => setSeriesForm(prev => ({ ...prev, name: e.target.value }))}
-              className="input"
+              className="input input-bordered w-full"
               placeholder="e.g., IPL 2025"
               required
             />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="label">Start Date <span className="text-red-400">*</span></label>
+              <label htmlFor="series-start-date" className="label"><span className="label-text">Start Date <span className="text-error">*</span></span></label>
               <input
+                id="series-start-date"
                 type="date"
                 value={seriesForm.startDate}
                 onChange={(e) => setSeriesForm(prev => ({ ...prev, startDate: e.target.value }))}
-                className="input"
+                className="input input-bordered w-full"
                 required
               />
             </div>
             <div>
-              <label className="label">End Date <span className="text-red-400">*</span></label>
+              <label htmlFor="series-end-date" className="label"><span className="label-text">End Date <span className="text-error">*</span></span></label>
               <input
+                id="series-end-date"
                 type="date"
                 value={seriesForm.endDate}
                 onChange={(e) => setSeriesForm(prev => ({ ...prev, endDate: e.target.value }))}
-                className="input"
+                className="input input-bordered w-full"
                 required
               />
             </div>
           </div>
           <div className="flex gap-3 justify-end pt-2">
-            <button type="button" onClick={() => setIsSeriesModalOpen(false)} className="btn-secondary">Cancel</button>
-            <button type="submit" className="btn-primary">Create Series</button>
+            <button type="button" onClick={() => setIsSeriesModalOpen(false)} className="btn btn-neutral">Cancel</button>
+            <button type="submit" className="btn btn-primary">Create Series</button>
           </div>
         </form>
       </Modal>
@@ -625,49 +658,53 @@ export default function AdminPage() {
       <Modal isOpen={isEditSeriesModalOpen} onClose={() => setIsEditSeriesModalOpen(false)} title="Edit Series">
         <div className="space-y-4">
           <div>
-            <label className="label">Series Name <span className="text-red-400">*</span></label>
+            <label htmlFor="edit-series-name" className="label"><span className="label-text">Series Name <span className="text-error">*</span></span></label>
             <input
+              id="edit-series-name"
               type="text"
               value={editingSeries.name}
               onChange={(e) => setEditingSeries(prev => ({ ...prev, name: e.target.value }))}
-              className="input"
+              className="input input-bordered w-full"
               placeholder="e.g., IPL 2025"
             />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="label">Start Date <span className="text-red-400">*</span></label>
+              <label htmlFor="edit-series-start" className="label"><span className="label-text">Start Date <span className="text-error">*</span></span></label>
               <input
+                id="edit-series-start"
                 type="date"
                 value={editingSeries.startDate}
                 onChange={(e) => setEditingSeries(prev => ({ ...prev, startDate: e.target.value }))}
-                className="input"
+                className="input input-bordered w-full"
               />
             </div>
             <div>
-              <label className="label">End Date <span className="text-red-400">*</span></label>
+              <label htmlFor="edit-series-end" className="label"><span className="label-text">End Date <span className="text-error">*</span></span></label>
               <input
+                id="edit-series-end"
                 type="date"
                 value={editingSeries.endDate}
                 onChange={(e) => setEditingSeries(prev => ({ ...prev, endDate: e.target.value }))}
-                className="input"
+                className="input input-bordered w-full"
               />
             </div>
           </div>
           <div>
-            <label className="label">Status</label>
+            <label htmlFor="edit-series-status" className="label"><span className="label-text">Status</span></label>
             <select
+              id="edit-series-status"
               value={editingSeries.status}
               onChange={(e) => setEditingSeries(prev => ({ ...prev, status: e.target.value }))}
-              className="input"
+              className="select select-bordered w-full"
             >
               <option value="active">Active</option>
               <option value="completed">Completed</option>
             </select>
           </div>
           <div className="flex gap-3 justify-end pt-2">
-            <button type="button" onClick={() => setIsEditSeriesModalOpen(false)} className="btn-secondary">Cancel</button>
-            <button type="button" onClick={handleUpdateSeries} className="btn-primary">Save Changes</button>
+            <button type="button" onClick={() => setIsEditSeriesModalOpen(false)} className="btn btn-neutral">Cancel</button>
+            <button type="button" onClick={handleUpdateSeries} className="btn btn-primary">Save Changes</button>
           </div>
         </div>
       </Modal>
@@ -688,12 +725,13 @@ export default function AdminPage() {
       <Modal isOpen={isMatchModalOpen} onClose={() => setIsMatchModalOpen(false)} title="Add New Match">
         <form onSubmit={handleAddMatch} className="space-y-4">
           <div>
-            <label className="label">Series <span className="text-red-400">*</span></label>
+            <label htmlFor="match-series" className="label"><span className="label-text">Series <span className="text-error">*</span></span></label>
             <select
+              id="match-series"
               name="seriesId"
               value={matchForm.seriesId}
               onChange={handleMatchFormChange}
-              className="input"
+              className="select select-bordered w-full"
               required
             >
               <option value="">Select a series...</option>
@@ -704,64 +742,68 @@ export default function AdminPage() {
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="label">Team A <span className="text-red-400">*</span></label>
+              <label htmlFor="match-team-a" className="label"><span className="label-text">Team A <span className="text-error">*</span></span></label>
               <input
+                id="match-team-a"
                 type="text"
                 name="teamA"
                 value={matchForm.teamA}
                 onChange={handleMatchFormChange}
-                className="input"
+                className="input input-bordered w-full"
                 placeholder="e.g., MI"
                 required
               />
             </div>
             <div>
-              <label className="label">Team B <span className="text-red-400">*</span></label>
+              <label htmlFor="match-team-b" className="label"><span className="label-text">Team B <span className="text-error">*</span></span></label>
               <input
+                id="match-team-b"
                 type="text"
                 name="teamB"
                 value={matchForm.teamB}
                 onChange={handleMatchFormChange}
-                className="input"
+                className="input input-bordered w-full"
                 placeholder="e.g., CSK"
                 required
               />
             </div>
           </div>
           <div>
-            <label className="label">Match Date & Time <span className="text-red-400">*</span></label>
+            <label htmlFor="match-date" className="label"><span className="label-text">Match Date &amp; Time <span className="text-error">*</span></span></label>
             <input
+              id="match-date"
               type="datetime-local"
               name="matchDate"
               value={matchForm.matchDate}
               onChange={handleMatchFormChange}
-              className="input"
+              className="input input-bordered w-full"
               required
             />
           </div>
           <div>
-            <label className="label">Venue <span className="text-red-400">*</span></label>
+            <label htmlFor="match-venue" className="label"><span className="label-text">Venue <span className="text-error">*</span></span></label>
             <input
+              id="match-venue"
               type="text"
               name="venue"
               value={matchForm.venue}
               onChange={handleMatchFormChange}
-              className="input"
+              className="input input-bordered w-full"
               placeholder="e.g., Wankhede Stadium, Mumbai"
               required
             />
           </div>
           <div>
-            <label className="label">Match Type</label>
-            <select name="matchType" value={matchForm.matchType} onChange={handleMatchFormChange} className="input">
+            <label htmlFor="match-type" className="label"><span className="label-text">Match Type</span></label>
+            <select id="match-type" name="matchType" value={matchForm.matchType} onChange={handleMatchFormChange} className="select select-bordered w-full">
               {matchTypes.map(t => (
                 <option key={t} value={t}>{t}</option>
               ))}
             </select>
           </div>
           <div className="flex gap-3 justify-end pt-2">
-            <button type="button" onClick={() => setIsMatchModalOpen(false)} className="btn-secondary">Cancel</button>
-            <button type="submit" className="btn-primary">Create Match</button>
+            <button type="button" onClick={() => setIsMatchModalOpen(false)} className="btn btn-neutral">Cancel</button>
+            <button type="submit" className="btn btn-primary">Create Match</button>
           </div>
         </form>
       </Modal>
@@ -770,11 +812,12 @@ export default function AdminPage() {
       <Modal isOpen={isEditMatchModalOpen} onClose={() => setIsEditMatchModalOpen(false)} title="Edit Match">
         <div className="space-y-4">
           <div>
-            <label className="label">Series <span className="text-red-400">*</span></label>
+            <label htmlFor="edit-match-series" className="label"><span className="label-text">Series <span className="text-error">*</span></span></label>
             <select
+              id="edit-match-series"
               value={editingMatch.seriesId}
               onChange={(e) => setEditingMatch(prev => ({ ...prev, seriesId: e.target.value }))}
-              className="input"
+              className="select select-bordered w-full"
             >
               <option value="">Select a series...</option>
               {seriesData.map(s => (
@@ -784,51 +827,56 @@ export default function AdminPage() {
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="label">Team A <span className="text-red-400">*</span></label>
+              <label htmlFor="edit-match-team-a" className="label"><span className="label-text">Team A <span className="text-error">*</span></span></label>
               <input
+                id="edit-match-team-a"
                 type="text"
                 value={editingMatch.teamA}
                 onChange={(e) => setEditingMatch(prev => ({ ...prev, teamA: e.target.value }))}
-                className="input"
+                className="input input-bordered w-full"
                 placeholder="e.g., MI"
               />
             </div>
             <div>
-              <label className="label">Team B <span className="text-red-400">*</span></label>
+              <label htmlFor="edit-match-team-b" className="label"><span className="label-text">Team B <span className="text-error">*</span></span></label>
               <input
+                id="edit-match-team-b"
                 type="text"
                 value={editingMatch.teamB}
                 onChange={(e) => setEditingMatch(prev => ({ ...prev, teamB: e.target.value }))}
-                className="input"
+                className="input input-bordered w-full"
                 placeholder="e.g., CSK"
               />
             </div>
           </div>
           <div>
-            <label className="label">Match Date & Time <span className="text-red-400">*</span></label>
+            <label htmlFor="edit-match-date" className="label"><span className="label-text">Match Date &amp; Time <span className="text-error">*</span></span></label>
             <input
+              id="edit-match-date"
               type="datetime-local"
               value={editingMatch.matchDate}
               onChange={(e) => setEditingMatch(prev => ({ ...prev, matchDate: e.target.value }))}
-              className="input"
+              className="input input-bordered w-full"
             />
           </div>
           <div>
-            <label className="label">Venue <span className="text-red-400">*</span></label>
+            <label htmlFor="edit-match-venue" className="label"><span className="label-text">Venue <span className="text-error">*</span></span></label>
             <input
+              id="edit-match-venue"
               type="text"
               value={editingMatch.venue}
               onChange={(e) => setEditingMatch(prev => ({ ...prev, venue: e.target.value }))}
-              className="input"
+              className="input input-bordered w-full"
               placeholder="e.g., Wankhede Stadium, Mumbai"
             />
           </div>
           <div>
-            <label className="label">Match Type</label>
+            <label htmlFor="edit-match-type" className="label"><span className="label-text">Match Type</span></label>
             <select
+              id="edit-match-type"
               value={editingMatch.matchType}
               onChange={(e) => setEditingMatch(prev => ({ ...prev, matchType: e.target.value }))}
-              className="input"
+              className="select select-bordered w-full"
             >
               {matchTypes.map(t => (
                 <option key={t} value={t}>{t}</option>
@@ -836,11 +884,12 @@ export default function AdminPage() {
             </select>
           </div>
           <div>
-            <label className="label">Status</label>
+            <label htmlFor="edit-match-status" className="label"><span className="label-text">Status</span></label>
             <select
+              id="edit-match-status"
               value={editingMatch.status}
               onChange={(e) => setEditingMatch(prev => ({ ...prev, status: e.target.value }))}
-              className="input"
+              className="select select-bordered w-full"
             >
               <option value="upcoming">Upcoming</option>
               <option value="live">Live</option>
@@ -848,8 +897,8 @@ export default function AdminPage() {
             </select>
           </div>
           <div className="flex gap-3 justify-end pt-2">
-            <button type="button" onClick={() => setIsEditMatchModalOpen(false)} className="btn-secondary">Cancel</button>
-            <button type="button" onClick={handleUpdateMatch} className="btn-primary">Save Changes</button>
+            <button type="button" onClick={() => setIsEditMatchModalOpen(false)} className="btn btn-neutral">Cancel</button>
+            <button type="button" onClick={handleUpdateMatch} className="btn btn-primary">Save Changes</button>
           </div>
         </div>
       </Modal>

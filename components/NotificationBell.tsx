@@ -23,10 +23,10 @@ export function NotificationBell() {
   }, [accessToken])
 
   return (
-    <Link href="/friend/notifications" className="relative text-slate-400 hover:text-white">
+    <Link href="/friend/notifications" className="relative text-base-content/60 hover:text-base-content">
       <Bell size={20} />
       {unreadCount > 0 && (
-        <span className="absolute -top-1 -right-1 bg-amber-400 text-slate-900 text-xs font-bold rounded-full w-4 h-4 flex items-center justify-center">
+        <span className="absolute -top-1 -right-1 bg-primary text-primary-content text-xs font-bold rounded-full w-4 h-4 flex items-center justify-center">
           {unreadCount > 9 ? '9+' : unreadCount}
         </span>
       )}
