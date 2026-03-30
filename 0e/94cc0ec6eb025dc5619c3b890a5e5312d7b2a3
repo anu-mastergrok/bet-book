@@ -1,0 +1,25 @@
+app/dashboard/history/page.tsx
+  23f9709f12aec394 65-77,79-80,197,199,213,215,230,232,242,244,296-297
+app/dashboard/friends/page.tsx
+  23f9709f12aec394 62,80,96,225,227,253,255,265,267
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.22",
+  "base_commit_sha": "0e94cc0ec6eb025dc5619c3b890a5e5312d7b2a3",
+  "prompts": {
+    "23f9709f12aec394": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "3b02e19c-0535-43b5-aa66-01f66669d9e1",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "S Kumar <skumar@ascend-marketing.com>",
+      "messages": [],
+      "total_additions": 34,
+      "total_deletions": 25,
+      "accepted_lines": 34,
+      "overriden_lines": 0
+    }
+  }
+}
