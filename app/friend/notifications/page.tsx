@@ -21,16 +21,17 @@ export default function FriendNotificationsPage() {
   useEffect(() => {
     if (!accessToken) return
     let cancelled = false
+    const token = accessToken
     const load = async () => {
       try {
-        const r = await fetch('/api/notifications', { headers: { Authorization: `Bearer ${accessToken}` } })
+        const r = await fetch('/api/notifications', { headers: { Authorization: `Bearer ${token}` } })
         if (!r.ok || cancelled) return
         const data = await r.json()
         if (!cancelled) setNotifications(data.notifications ?? [])
         // Mark all as read (fire-and-forget)
         fetch('/api/notifications', {
           method: 'PATCH',
-          headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+          headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
           body: JSON.stringify({}),
         }).catch(() => {})
       } catch {
@@ -43,14 +44,18 @@ export default function FriendNotificationsPage() {
     return () => { cancelled = true }
   }, [accessToken])
 
-  if (isLoading) return <div className="text-center text-slate-400 py-20">Loading...</div>
+  if (isLoading) return (
+    <div className="flex justify-center py-20">
+      <span className="loading loading-spinner loading-lg text-primary" />
+    </div>
+  )
 
   return (
     <div className="space-y-4">
-      <h1 className="text-xl font-bold text-white">Notifications</h1>
+      <h1 className="text-xl font-bold text-base-content">Notifications</h1>
 
       {notifications.length === 0 && (
-        <div className="text-center text-slate-500 py-20">
+        <div className="text-center text-base-content/40 py-20">
           <Bell size={40} className="mx-auto mb-3 opacity-30" />
           No notifications yet.
         </div>
@@ -59,14 +64,16 @@ export default function FriendNotificationsPage() {
       {notifications.map(n => (
         <div
           key={n.id}
-          className={`rounded-xl p-4 border space-y-1 ${n.read ? 'bg-slate-900 border-slate-800' : 'bg-slate-800 border-amber-800/40'}`}
+          className={`card shadow-sm ${n.read ? 'bg-base-200' : 'bg-base-300'}`}
         >
-          <div className="flex justify-between items-start">
-            <p className="font-medium text-white text-sm">{n.title}</p>
-            {!n.read && <span className="w-2 h-2 bg-amber-400 rounded-full mt-1 flex-shrink-0" />}
+          <div className="card-body space-y-1">
+            <div className="flex justify-between items-start">
+              <p className="font-medium text-base-content text-sm">{n.title}</p>
+              {!n.read && <span className="w-2 h-2 bg-primary rounded-full mt-1 flex-shrink-0" />}
+            </div>
+            <p className="text-base-content/60 text-sm">{n.body}</p>
+            <p className="text-base-content/40 text-xs">{new Date(n.createdAt).toLocaleString('en-IN')}</p>
           </div>
-          <p className="text-slate-400 text-sm">{n.body}</p>
-          <p className="text-slate-600 text-xs">{new Date(n.createdAt).toLocaleString('en-IN')}</p>
         </div>
       ))}
     </div>
