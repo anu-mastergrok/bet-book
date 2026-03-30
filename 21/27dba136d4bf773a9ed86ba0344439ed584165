@@ -1,0 +1,25 @@
+app/dashboard/new-bet/page.tsx
+  23f9709f12aec394 55-71,73-74,201,203-204,214-217
+app/dashboard/clients/page.tsx
+  23f9709f12aec394 82-88,90-91,93-94,96-101,103-104,488,492,528,532,544,548
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.22",
+  "base_commit_sha": "2127dba136d4bf773a9ed86ba0344439ed584165",
+  "prompts": {
+    "23f9709f12aec394": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "3b02e19c-0535-43b5-aa66-01f66669d9e1",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "S Kumar <skumar@ascend-marketing.com>",
+      "messages": [],
+      "total_additions": 63,
+      "total_deletions": 63,
+      "accepted_lines": 60,
+      "overriden_lines": 0
+    }
+  }
+}
